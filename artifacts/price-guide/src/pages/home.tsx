@@ -1,107 +1,175 @@
 import { useState } from "react";
-import { useListItems, useListCategories, useGetStats } from "@workspace/api-client-react";
-import { ItemCard } from "@/components/item-card";
+import { Link, useLocation } from "wouter";
+import { useListCategories, useListItems, getListItemsQueryKey } from "@workspace/api-client-react";
+import { Search, Eye, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState<string | undefined>();
-  const [sort, setSort] = useState<"recent" | "watched">("recent");
-  
-  const { data: itemsData, isLoading } = useListItems({
-    category: activeCategory,
-    sort,
-  });
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [, setLocation] = useLocation();
+
   const { data: categories } = useListCategories();
-  const { data: stats } = useGetStats();
+  
+  const { data: itemsData, isLoading } = useListItems(
+    { 
+      q: search || undefined, 
+      category: activeCategory || undefined,
+      page,
+      limit: 50 
+    },
+    {
+      query: {
+        queryKey: getListItemsQueryKey({ q: search || undefined, category: activeCategory || undefined, page, limit: 50 }),
+      }
+    }
+  );
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+  };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-12">
-      {/* Sidebar */}
-      <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-10">
-        <div>
-          <h2 className="font-serif text-lg font-bold mb-4 uppercase tracking-widest text-muted-foreground text-xs border-b border-border pb-2">Categories</h2>
-          <ul className="space-y-1">
-            <li>
-              <button 
-                onClick={() => setActiveCategory(undefined)}
-                className={`text-sm w-full text-left px-3 py-2 rounded transition-colors ${!activeCategory ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted font-medium text-muted-foreground hover:text-foreground"}`}
-              >
-                All Categories
-              </button>
-            </li>
-            {categories?.map(c => (
-              <li key={c.name}>
-                <button 
-                  onClick={() => setActiveCategory(c.name)}
-                  className={`text-sm w-full text-left px-3 py-2 rounded flex justify-between items-center transition-colors ${activeCategory === c.name ? "bg-primary text-primary-foreground font-bold" : "hover:bg-muted font-medium text-muted-foreground hover:text-foreground"}`}
-                >
-                  <span>{c.name}</span>
-                  <span className="text-xs opacity-70 font-mono">{c.itemCount}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {stats && (
-          <div className="bg-card border border-border p-5 rounded-md shadow-sm">
-            <h3 className="font-serif font-bold text-lg mb-4">Market Overview</h3>
-            <div className="space-y-4 text-sm">
-              <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                <span className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold">Tracked Items</span>
-                <span className="font-mono font-bold text-lg">{stats.totalItems}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                <span className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold">Verified Sales</span>
-                <span className="font-mono font-bold text-lg">{stats.verifiedSales}</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </aside>
-
-      {/* Main Grid */}
-      <div className="flex-1">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4 border-b border-border pb-6">
-          <div>
-            <h1 className="font-serif text-4xl font-bold">
-              {activeCategory ? activeCategory : "Complete Catalog"}
-            </h1>
-            <p className="text-muted-foreground mt-2 font-mono text-sm">
-              {itemsData?.total || 0} ITEMS MATCH YOUR CRITERIA.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Sort by</span>
-            <select 
-              value={sort} 
-              onChange={e => setSort(e.target.value as any)}
-              className="text-sm bg-background border border-input rounded-md px-4 py-2 font-bold focus:outline-none focus:border-primary shadow-sm"
-            >
-              <option value="recent">Recently Added</option>
-              <option value="watched">Most Watched</option>
-            </select>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="bg-muted/50 h-[400px] rounded-md animate-pulse border border-border" />
-            ))}
-          </div>
-        ) : itemsData?.items.length === 0 ? (
-           <div className="py-20 text-center border border-dashed border-border rounded-md bg-card/50">
-             <p className="font-serif text-2xl text-muted-foreground mb-2">No items found.</p>
-             <p className="text-sm text-muted-foreground">Try adjusting your filters or checking back later.</p>
-           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
-            {itemsData?.items.map(item => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </div>
-        )}
+    <div className="container mx-auto px-4 py-8">
+      {/* Search Hero */}
+      <div className="max-w-3xl mx-auto mb-8 text-center">
+        <h1 className="text-3xl font-bold mb-6">Price Guide Database</h1>
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <Input 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search the catalog..." 
+            className="flex-1 h-12 text-lg shadow-sm"
+          />
+          <Button type="submit" className="h-12 px-8 text-lg shadow-sm">
+            <Search className="w-5 h-5 mr-2" />
+            Search
+          </Button>
+        </form>
       </div>
+
+      {/* Category Tabs */}
+      <div className="mb-6 border-b flex gap-6 overflow-x-auto hide-scrollbar">
+        <button
+          onClick={() => { setActiveCategory(""); setPage(1); }}
+          className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
+            activeCategory === "" 
+              ? "border-b-2 border-primary text-primary" 
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          All Categories
+        </button>
+        {categories?.map((cat) => (
+          <button
+            key={cat.name}
+            onClick={() => { setActiveCategory(cat.name); setPage(1); }}
+            className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
+              activeCategory === cat.name 
+                ? "border-b-2 border-primary text-primary" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {cat.name} <span className="text-xs text-muted-foreground/70 ml-1 font-mono">({cat.itemCount})</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Items Table */}
+      <div className="bg-white border rounded shadow-sm overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="w-1/3">Item Name</th>
+              <th>Category</th>
+              <th>Year</th>
+              <th>Authenticator</th>
+              <th className="text-right">Median Est.</th>
+              <th>Confidence</th>
+              <th className="text-center w-16">Watch</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Loading items...
+                </td>
+              </tr>
+            ) : itemsData?.items.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                  No items found.
+                </td>
+              </tr>
+            ) : (
+              itemsData?.items.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <Link href={`/items/${item.slug}`} className="text-primary font-medium hover:underline flex items-center gap-1.5">
+                      {item.name}
+                      {item.status === 'pending' && <AlertCircle className="w-3.5 h-3.5 text-orange-500 inline" />}
+                    </Link>
+                  </td>
+                  <td className="text-muted-foreground">{item.category}</td>
+                  <td className="text-muted-foreground">{item.year || "-"}</td>
+                  <td className="text-muted-foreground">{item.authenticator || "-"}</td>
+                  <td className="text-right font-mono font-medium">
+                    {item.medianEstimate ? `$${item.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
+                  </td>
+                  <td>
+                    {item.confidence ? (
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                        item.confidence === 'high' ? 'bg-green-100 text-green-800' :
+                        item.confidence === 'medium' ? 'bg-blue-100 text-blue-800' :
+                        'bg-orange-100 text-orange-800'
+                      }`}>
+                        {item.confidence}
+                      </span>
+                    ) : "-"}
+                  </td>
+                  <td className="text-center text-muted-foreground">
+                    <div className="flex items-center justify-center gap-1">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="font-mono text-xs">{item.watchCount || 0}</span>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Pagination */}
+      {itemsData && itemsData.total > itemsData.limit && (
+        <div className="mt-4 flex justify-between items-center text-sm text-muted-foreground">
+          <div>
+            Showing {(page - 1) * itemsData.limit + 1} to {Math.min(page * itemsData.limit, itemsData.total)} of {itemsData.total} items
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page * itemsData.limit >= itemsData.total}
+              onClick={() => setPage(p => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

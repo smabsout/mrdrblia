@@ -1,45 +1,90 @@
-import { useGetWatchlist } from "@workspace/api-client-react";
-import { ItemCard } from "@/components/item-card";
 import { Link } from "wouter";
-import { Bookmark, Search } from "lucide-react";
+import { useGetWatchlist, getGetWatchlistQueryKey, useGetMe } from "@workspace/api-client-react";
+import { Eye, AlertCircle } from "lucide-react";
 
 export default function Watchlist() {
-  const { data: watchlistItems, isLoading } = useGetWatchlist();
+  const { data: me } = useGetMe();
+  const { data: watchlist, isLoading } = useGetWatchlist({
+    query: { enabled: !!me, queryKey: getGetWatchlistQueryKey() }
+  });
+
+  if (!me) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center max-w-lg">
+        <h1 className="text-2xl font-bold mb-4">Watchlist</h1>
+        <p className="text-muted-foreground mb-6">Please log in to view your watchlist.</p>
+        <Link href="/login" className="text-primary hover:underline">Log In</Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-8 border-b border-border pb-6">
-        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-          <Bookmark className="w-6 h-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="font-serif text-3xl font-bold">Your Watchlist</h1>
-          <p className="text-muted-foreground mt-1 font-mono text-sm">TRACKING {watchlistItems?.length || 0} ITEMS</p>
-        </div>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Your Watchlist</h1>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-muted/50 h-[400px] rounded-md animate-pulse border border-border" />
-          ))}
-        </div>
-      ) : watchlistItems?.length === 0 ? (
-        <div className="py-24 text-center border border-dashed border-border rounded-md bg-card/50 flex flex-col items-center">
-          <Bookmark className="w-12 h-12 text-muted-foreground/30 mb-4" />
-          <p className="font-serif text-2xl text-foreground font-bold mb-2">Your watchlist is empty.</p>
-          <p className="text-muted-foreground mb-8 max-w-md">Keep track of the items you care about by adding them to your watchlist.</p>
-          <Link href="/" className="bg-primary text-primary-foreground px-6 py-3 rounded font-bold uppercase tracking-widest text-sm hover:bg-primary/90 transition-colors flex items-center gap-2">
-            <Search className="w-4 h-4" /> Browse Catalog
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {watchlistItems?.map(item => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
+      <div className="bg-white border rounded shadow-sm overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="w-1/3">Item Name</th>
+              <th>Category</th>
+              <th>Year</th>
+              <th>Authenticator</th>
+              <th className="text-right">Median Est.</th>
+              <th>Confidence</th>
+              <th className="text-center w-16">Watch</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Loading watchlist...
+                </td>
+              </tr>
+            ) : watchlist?.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                  Your watchlist is empty.
+                </td>
+              </tr>
+            ) : (
+              watchlist?.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <Link href={`/items/${item.slug}`} className="text-primary font-medium hover:underline flex items-center gap-1.5">
+                      {item.name}
+                      {item.status === 'pending' && <AlertCircle className="w-3.5 h-3.5 text-orange-500 inline" />}
+                    </Link>
+                  </td>
+                  <td className="text-muted-foreground">{item.category}</td>
+                  <td className="text-muted-foreground">{item.year || "-"}</td>
+                  <td className="text-muted-foreground">{item.authenticator || "-"}</td>
+                  <td className="text-right font-mono font-medium">
+                    {item.medianEstimate ? `$${item.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
+                  </td>
+                  <td>
+                    {item.confidence ? (
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${
+                        item.confidence === 'high' ? 'bg-green-100 text-green-800' :
+                        item.confidence === 'medium' ? 'bg-blue-100 text-blue-800' :
+                        'bg-orange-100 text-orange-800'
+                      }`}>
+                        {item.confidence}
+                      </span>
+                    ) : "-"}
+                  </td>
+                  <td className="text-center text-muted-foreground">
+                    <div className="flex items-center justify-center gap-1">
+                      <Eye className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -1,26 +1,34 @@
 export default function TOS() {
   return (
-    <div className="max-w-3xl mx-auto py-12">
-      <h1 className="font-serif text-4xl font-bold mb-8 pb-4 border-b border-border">Terms of Service</h1>
+    <div className="container mx-auto px-4 py-12 max-w-3xl prose prose-sm">
+      <h1 className="text-3xl font-bold mb-6">Terms of Service</h1>
       
-      <div className="prose prose-slate dark:prose-invert prose-headings:font-serif prose-h2:text-2xl prose-h2:mt-8 max-w-none">
-        <p className="text-lg text-muted-foreground font-medium mb-8">Last updated: October 2023</p>
-        
-        <h2>1. Agreement to Terms</h2>
-        <p>By accessing or using The Provenance, you agree to be bound by these Terms of Service. This platform is provided for research and educational purposes only.</p>
+      <p>Last updated: {new Date().toLocaleDateString()}</p>
+      
+      <h2>1. Acceptance of Terms</h2>
+      <p>
+        By accessing and using PriceGuide, you accept and agree to be bound by the terms and provision of this agreement.
+      </p>
 
-        <h2>2. Age Restriction & Content Warning</h2>
-        <p>You must be at least 18 years of age to use this service. The Provenance indexes historical sales and auction data for collectibles. Some historical items or associated provenance materials may contain content, imagery, or themes that are sensitive or controversial in nature.</p>
+      <h2>2. Informational Purposes Only</h2>
+      <p>
+        The valuations and historical pricing data provided on PriceGuide are for informational purposes only. We do not guarantee the accuracy of any pricing data, and you should not rely on this information for making financial decisions or investments. Market conditions fluctuate, and actual sale prices may differ significantly from our estimates.
+      </p>
 
-        <h2>3. Provenance Disclosure & Accuracy</h2>
-        <p>While we strive for accuracy, all valuations and price estimates are derived from available public and private sales data. We do not guarantee the completeness, reliability, or accuracy of any single data point. Users are required to disclose all known provenance issues when submitting an item for review.</p>
-        
-        <h2>4. Valuations are Not Financial Advice</h2>
-        <p>The median estimates and confidence tiers provided by The Provenance are computational reflections of historical data, not financial advice, appraisals, or guarantees of future value. You should consult a certified appraiser before making significant financial decisions.</p>
+      <h2>3. User Accounts</h2>
+      <p>
+        If you create an account on the website, you are responsible for maintaining the security of your account and you are fully responsible for all activities that occur under the account. You must immediately notify us of any unauthorized uses of your account.
+      </p>
 
-        <h2>5. Data Submission and Verification</h2>
-        <p>Sales data submitted by users is placed in a pending verification queue. Our administrative team reviews all submissions against verifiable auction records, public marketplaces, and recognized private dealer reports before including them in the valuation model.</p>
-      </div>
+      <h2>4. Data Accuracy</h2>
+      <p>
+        While we strive to keep the information up to date and correct, we make no representations or warranties of any kind, express or implied, about the completeness, accuracy, reliability, suitability or availability with respect to the website or the information, products, services, or related graphics contained on the website for any purpose.
+      </p>
+
+      <h2>5. Modifications</h2>
+      <p>
+        We reserve the right, at our sole discretion, to modify or replace these Terms at any time. What constitutes a material change will be determined at our sole discretion.
+      </p>
     </div>
   );
 }

@@ -1,201 +1,143 @@
-import { useState, useRef, useEffect } from "react";
-import { useLocation, useParams, Link } from "wouter";
-import { 
-  useCreateItem, 
-  useUpdateItem,
-  useGetItem,
-  ItemInput,
-  useListCategories
-} from "@workspace/api-client-react";
-import { AdminGuard } from "@/components/admin-guard";
-import { ArrowLeft } from "lucide-react";
+import { useRoute, useLocation } from "wouter";
+import { useGetMe, useGetItem, useCreateItem, useUpdateItem, getGetItemQueryKey } from "@workspace/api-client-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export default function AdminItemForm() {
-  const params = useParams<{ slug: string }>();
-  const isEdit = !!params.slug;
+  const { data: me } = useGetMe();
+  const [, params] = useRoute("/admin/items/:slug/edit");
+  const isEdit = !!params?.slug;
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const { data: existingItem, isLoading: isLoadingItem } = useGetItem(params.slug || "", {
-    query: { enabled: isEdit }
+  const { data: item } = useGetItem(params?.slug!, {
+    query: { enabled: isEdit, queryKey: getGetItemQueryKey(params?.slug!) }
   });
-  
-  const itemId = existingItem?.id;
-  
-  const { data: categories } = useListCategories();
-  
-  const createItem = useCreateItem({ mutation: { onSuccess: (res) => setLocation(`/items/${res.slug}`) }});
-  const updateItem = useUpdateItem({ mutation: { onSuccess: (res) => setLocation(`/items/${res.slug}`) }});
 
-  const [formData, setFormData] = useState<ItemInput>({
+  const createItem = useCreateItem();
+  const updateItem = useUpdateItem();
+
+  const [formData, setFormData] = useState({
     name: "",
     category: "",
-    subcategory: "",
-    description: "",
-    provenanceNotes: "",
-    year: undefined,
-    sourceEvent: "",
+    year: "",
     authenticator: "",
-    imageUrls: []
+    description: "",
   });
 
-  const initialized = useRef(false);
   useEffect(() => {
-    if (isEdit && existingItem && !initialized.current) {
+    if (item && isEdit) {
       setFormData({
-        name: existingItem.name || "",
-        category: existingItem.category || "",
-        subcategory: existingItem.subcategory || "",
-        description: existingItem.description || "",
-        provenanceNotes: existingItem.provenanceNotes || "",
-        year: existingItem.year || undefined,
-        sourceEvent: existingItem.sourceEvent || "",
-        authenticator: existingItem.authenticator || "",
-        imageUrls: existingItem.imageUrls || []
+        name: item.name || "",
+        category: item.category || "",
+        year: item.year?.toString() || "",
+        authenticator: item.authenticator || "",
+        description: item.description || "",
       });
-      initialized.current = true;
     }
-  }, [isEdit, existingItem]);
+  }, [item, isEdit]);
+
+  if (!me || me.role !== "admin") {
+    return <div className="p-8 text-center text-red-500">Unauthorized</div>;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const dataToSubmit = {
-      ...formData,
-      imageUrls: formData.imageUrls?.filter(url => url.trim() !== "")
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      year: formData.year ? parseInt(formData.year) : undefined,
+      authenticator: formData.authenticator || undefined,
+      description: formData.description || undefined,
     };
 
-    if (isEdit && itemId) {
-      updateItem.mutate({ id: itemId, data: dataToSubmit });
+    if (isEdit && item) {
+      updateItem.mutate({ id: item.id, data: payload }, {
+        onSuccess: (res) => {
+          toast({ title: "Item updated" });
+          setLocation(`/items/${res.slug}`);
+        },
+        onError: (err) => toast({ title: "Error", description: err.error, variant: "destructive" })
+      });
     } else {
-      createItem.mutate({ data: dataToSubmit });
+      createItem.mutate({ data: payload }, {
+        onSuccess: (res) => {
+          toast({ title: "Item created" });
+          setLocation(`/items/${res.slug}`);
+        },
+        onError: (err) => toast({ title: "Error", description: err.error, variant: "destructive" })
+      });
     }
   };
 
-  const isPending = createItem.isPending || updateItem.isPending;
-
   return (
-    <AdminGuard>
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Link href={isEdit ? `/items/${existingItem?.slug}` : "/admin/items/pending"} className="p-2 border border-border rounded hover:bg-muted transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <h1 className="font-serif text-3xl font-bold">{isEdit ? "Edit Item" : "Create New Item"}</h1>
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <h1 className="text-2xl font-bold mb-6">{isEdit ? "Edit Item" : "Create Item"}</h1>
+      
+      <form onSubmit={handleSubmit} className="bg-white border p-6 rounded shadow-sm space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Item Name *</Label>
+          <Input 
+            id="name" 
+            required 
+            value={formData.name}
+            onChange={e => setFormData({ ...formData, name: e.target.value })}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="category">Category *</Label>
+            <Input 
+              id="category" 
+              required 
+              value={formData.category}
+              onChange={e => setFormData({ ...formData, category: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="year">Year</Label>
+            <Input 
+              id="year" 
+              type="number"
+              value={formData.year}
+              onChange={e => setFormData({ ...formData, year: e.target.value })}
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="authenticator">Authenticator (e.g., PSA, WATA)</Label>
+          <Input 
+            id="authenticator" 
+            value={formData.authenticator}
+            onChange={e => setFormData({ ...formData, authenticator: e.target.value })}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea 
+            id="description" 
+            className="min-h-[100px]"
+            value={formData.description}
+            onChange={e => setFormData({ ...formData, description: e.target.value })}
+          />
         </div>
 
-        {isEdit && isLoadingItem ? (
-          <div className="animate-pulse h-96 bg-muted/50 rounded border border-border"></div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6 bg-card border border-border p-6 rounded-md shadow-sm">
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Item Name *</label>
-              <input 
-                required
-                type="text"
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Category *</label>
-                <input 
-                  required
-                  list="categories"
-                  type="text"
-                  value={formData.category}
-                  onChange={e => setFormData({...formData, category: e.target.value})}
-                  className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                />
-                <datalist id="categories">
-                  {categories?.map(c => <option key={c.name} value={c.name} />)}
-                </datalist>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Subcategory</label>
-                <input 
-                  type="text"
-                  value={formData.subcategory}
-                  onChange={e => setFormData({...formData, subcategory: e.target.value})}
-                  className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Description</label>
-              <textarea 
-                rows={4}
-                value={formData.description}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-                className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary font-serif"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Provenance Notes</label>
-              <textarea 
-                rows={3}
-                value={formData.provenanceNotes}
-                onChange={e => setFormData({...formData, provenanceNotes: e.target.value})}
-                className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary font-serif italic"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Year</label>
-                <input 
-                  type="number"
-                  value={formData.year || ''}
-                  onChange={e => setFormData({...formData, year: e.target.value ? parseInt(e.target.value) : undefined})}
-                  className="w-full bg-background border border-input rounded px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Source Event</label>
-                <input 
-                  type="text"
-                  value={formData.sourceEvent}
-                  onChange={e => setFormData({...formData, sourceEvent: e.target.value})}
-                  className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Authenticator</label>
-                <input 
-                  type="text"
-                  value={formData.authenticator}
-                  onChange={e => setFormData({...formData, authenticator: e.target.value})}
-                  className="w-full bg-background border border-input rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Image URL</label>
-              <input 
-                type="url"
-                value={formData.imageUrls?.[0] || ''}
-                onChange={e => setFormData({...formData, imageUrls: [e.target.value]})}
-                className="w-full bg-background border border-input rounded px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
-                placeholder="https://"
-              />
-            </div>
-
-            <div className="pt-4 border-t border-border">
-              <button 
-                type="submit"
-                disabled={isPending}
-                className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-widest text-sm py-3 rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "Saving..." : (isEdit ? "Update Item" : "Create Item")}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </AdminGuard>
+        <div className="pt-4 border-t flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setLocation(isEdit ? `/items/${item?.slug}` : "/")}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={createItem.isPending || updateItem.isPending}>
+            {isEdit ? "Save Changes" : "Create Item"}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

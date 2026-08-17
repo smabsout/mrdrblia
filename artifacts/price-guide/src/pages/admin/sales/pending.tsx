@@ -1,96 +1,96 @@
-import { AdminGuard } from "@/components/admin-guard";
-import { useListPendingSales, useVerifySale, getListPendingSalesQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useListPendingSales, getListPendingSalesQueryKey, useVerifySale } from "@workspace/api-client-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { formatPrice } from "@/lib/utils";
 import { Link } from "wouter";
-import { Check, ShieldCheck } from "lucide-react";
 
 export default function PendingSales() {
-  const { data: sales, isLoading } = useListPendingSales();
-  const verifySale = useVerifySale();
+  const { data: me } = useGetMe();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: sales, isLoading } = useListPendingSales({
+    query: { enabled: me?.role === 'admin', queryKey: getListPendingSalesQueryKey() }
+  });
+
+  const verifySale = useVerifySale();
+
+  if (!me || me.role !== "admin") {
+    return <div className="p-8 text-center text-red-500">Unauthorized</div>;
+  }
+
   const handleVerify = (id: number) => {
-    verifySale.mutate(
-      { id },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListPendingSalesQueryKey() });
-        }
+    verifySale.mutate({ id }, {
+      onSuccess: () => {
+        toast({ title: "Sale verified" });
+        queryClient.invalidateQueries({ queryKey: getListPendingSalesQueryKey() });
+      },
+      onError: (err) => {
+        toast({ title: "Error", description: err.error, variant: "destructive" });
       }
-    );
+    });
   };
 
   return (
-    <AdminGuard>
-      <div className="mb-6 flex justify-between items-end">
-        <div>
-          <h1 className="font-serif text-3xl font-bold mb-2">Pending Sales</h1>
-          <p className="text-muted-foreground text-sm">Verify unconfirmed sales before they affect valuations.</p>
-        </div>
-        {sales && sales.length > 0 && (
-          <div className="bg-primary/10 text-primary font-mono text-sm px-3 py-1 rounded font-bold">
-            {sales.length} Pending
-          </div>
-        )}
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">Pending Sales Verifications</h1>
 
-      {isLoading ? (
-        <div className="animate-pulse h-64 bg-muted/50 rounded-md border border-border"></div>
-      ) : !sales || sales.length === 0 ? (
-        <div className="py-20 text-center border border-dashed border-border rounded-md bg-card/30">
-          <ShieldCheck className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="font-serif text-xl font-bold mb-1">Queue Empty</h2>
-          <p className="text-muted-foreground text-sm">All pending sales have been verified.</p>
-        </div>
-      ) : (
-        <div className="bg-card border border-border rounded-md overflow-hidden shadow-sm">
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="border-b border-border/50 bg-muted/30 text-[10px] uppercase tracking-widest text-muted-foreground">
-                <th className="p-4 font-bold">Date</th>
-                <th className="p-4 font-bold">Item</th>
-                <th className="p-4 font-bold">Source</th>
-                <th className="p-4 font-bold">Condition/Auth</th>
-                <th className="p-4 font-bold text-right">Price</th>
-                <th className="p-4 font-bold text-center">Action</th>
+      <div className="bg-white border rounded shadow-sm overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th className="text-right">Price</th>
+              <th>Date</th>
+              <th>Source</th>
+              <th>Condition</th>
+              <th>Auth Status</th>
+              <th className="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border/30">
-              {sales.map(sale => (
-                <tr key={sale.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="p-4 font-mono text-xs">{new Date(sale.saleDate).toLocaleDateString()}</td>
-                  <td className="p-4">
-                    <Link href={`/items/${sale.itemSlug}`} className="font-serif font-bold text-primary hover:underline">
-                      {sale.itemName}
-                    </Link>
+            ) : sales?.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-muted-foreground">No pending sales.</td>
+              </tr>
+            ) : (
+              sales?.map((sale) => (
+                <tr key={sale.id}>
+                  <td>
+                    {sale.itemSlug ? (
+                      <Link href={`/items/${sale.itemSlug}`} className="text-primary hover:underline font-medium">
+                        {sale.itemName || `Item #${sale.itemId}`}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{sale.itemName || `Item #${sale.itemId}`}</span>
+                    )}
                   </td>
-                  <td className="p-4">
-                    <div className="capitalize font-medium">{sale.saleSource.replace('_', ' ')}</div>
-                    {sale.sourceName && <div className="text-xs text-muted-foreground">{sale.sourceName}</div>}
-                  </td>
-                  <td className="p-4 text-xs">
-                    <div><span className="opacity-50">Cond:</span> {sale.conditionGrade || 'Unknown'}</div>
-                    <div><span className="opacity-50">Auth:</span> {sale.authenticationStatus || 'Unknown'}</div>
-                  </td>
-                  <td className="p-4 text-right font-mono font-bold text-lg">
-                    {formatPrice(sale.salePrice)}
-                  </td>
-                  <td className="p-4 text-center">
-                    <button 
+                  <td className="text-right font-mono font-medium">${sale.salePrice.toLocaleString()}</td>
+                  <td className="whitespace-nowrap">{new Date(sale.saleDate).toLocaleDateString()}</td>
+                  <td>{sale.sourceName || sale.saleSource.replace('_', ' ')}</td>
+                  <td className="capitalize">{sale.conditionGrade || "-"}</td>
+                  <td className="capitalize">{sale.authenticationStatus || "-"}</td>
+                  <td className="text-right">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-green-600 border-green-200 hover:bg-green-50"
                       onClick={() => handleVerify(sale.id)}
                       disabled={verifySale.isPending}
-                      className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-widest hover:bg-primary/90 transition-colors inline-flex items-center gap-1 disabled:opacity-50"
                     >
-                      <Check className="w-3 h-3" /> Verify
-                    </button>
+                      Verify
+                    </Button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </AdminGuard>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
