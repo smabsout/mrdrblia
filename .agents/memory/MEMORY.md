@@ -1,0 +1,2 @@
+- [Orval Zod v3 compatibility](orval-zod-v3.md) — use type:number not type:integer in OpenAPI specs; avoid format:email
+- [Price Guide valuation engine](valuation-engine.md) — comp-based, never LLM-generated; cache pattern and tier logic

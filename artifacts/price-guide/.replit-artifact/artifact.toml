@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Price Guide"
+description = "A full-stack price guide web app with a comp-based valuation engine. Admins catalog items and enter verified historical sale records. The valuation engine computes defensible low/median/high price estimates from real comps using exponential decay weighting and condition segmentation — no AI-generated prices. Includes browse/search, item detail with 'show your work' panels, admin item/sale management, a verification queue, watchlist, and email/password auth."
+version = "1.0.0"
+id = "artifacts/price-guide"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18565
+
+[services.development]
+run = "pnpm --filter @workspace/price-guide run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/price-guide", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/price-guide/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18565"
+BASE_PATH = "/"

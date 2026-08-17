@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Price Guide API with comp-based valuation engine
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: items
+    description: Item catalog
+  - name: valuation
+    description: Valuation engine
+  - name: auth
+    description: Authentication
+  - name: watchlist
+    description: User watchlist
+  - name: admin
+    description: Admin operations
+  - name: stats
+    description: Statistics and summaries
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,515 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /items:
+    get:
+      operationId: listItems
+      tags: [items]
+      summary: Browse and search items
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [recent, watched]
+        - in: query
+          name: page
+          schema:
+            type: number
+        - in: query
+          name: limit
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemListResponse"
+
+  /items/{slug}:
+    get:
+      operationId: getItem
+      tags: [items]
+      summary: Get item detail
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Item detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /items/{slug}/valuation:
+    get:
+      operationId: getItemValuation
+      tags: [valuation]
+      summary: Get valuation for an item
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Valuation result with audit trail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValuationResult"
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /items/{slug}/sales:
+    get:
+      operationId: getItemSales
+      tags: [valuation]
+      summary: Get sales history for an item (show your work)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Sales records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /items/{slug}/comps:
+    get:
+      operationId: getItemComps
+      tags: [valuation]
+      summary: Get comparable items used in valuation
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Comparable items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompMatch"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [items]
+      summary: List all categories with item counts
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [stats]
+      summary: Site-wide stats and summary
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+
+  /watchlist:
+    get:
+      operationId: getWatchlist
+      tags: [watchlist]
+      summary: Get current user's watchlist
+      responses:
+        "200":
+          description: Watchlist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemSummary"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: addToWatchlist
+      tags: [watchlist]
+      summary: Add item to watchlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchlistInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistEntry"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /watchlist/{itemId}:
+    delete:
+      operationId: removeFromWatchlist
+      tags: [watchlist]
+      summary: Remove item from watchlist
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Removed
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/items:
+    post:
+      operationId: createItem
+      tags: [admin]
+      summary: Create a new item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetail"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/items/pending:
+    get:
+      operationId: listPendingItems
+      tags: [admin]
+      summary: List items pending approval
+      responses:
+        "200":
+          description: Pending items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ItemDetail"
+
+  /admin/items/{id}:
+    patch:
+      operationId: updateItem
+      tags: [admin]
+      summary: Update an item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/items/{id}/status:
+    patch:
+      operationId: updateItemStatus
+      tags: [admin]
+      summary: Approve or reject an item
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemStatusInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetail"
+
+  /admin/sales/pending:
+    get:
+      operationId: listPendingSales
+      tags: [admin]
+      summary: List unverified sales for review
+      responses:
+        "200":
+          description: Pending sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaleRecord"
+
+  /admin/items/{itemId}/sales:
+    post:
+      operationId: createSale
+      tags: [admin]
+      summary: Add a sale record to an item
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleInput"
+      responses:
+        "201":
+          description: Sale created, valuation recomputed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleRecord"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/sales/{id}:
+    patch:
+      operationId: updateSale
+      tags: [admin]
+      summary: Update a sale record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleRecord"
+
+  /admin/sales/{id}/verify:
+    patch:
+      operationId: verifySale
+      tags: [admin]
+      summary: Mark a sale as verified (admin only — triggers valuation recompute)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaleRecord"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +552,416 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        displayName:
+          type: string
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthUser:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: number
+        email:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, admin]
+
+    ItemSummary:
+      type: object
+      required: [id, slug, name, category, status, createdAt]
+      properties:
+        id:
+          type: number
+        slug:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: ["string", "null"]
+        year:
+          type: ["number", "null"]
+        authenticator:
+          type: ["string", "null"]
+        notorietyTier:
+          type: ["string", "null"]
+        imageUrls:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        watchCount:
+          type: number
+        medianEstimate:
+          type: ["number", "null"]
+        confidence:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ItemDetail:
+      type: object
+      required: [id, slug, name, category, status, createdAt]
+      properties:
+        id:
+          type: number
+        slug:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        provenanceNotes:
+          type: ["string", "null"]
+        year:
+          type: ["number", "null"]
+        sourceEvent:
+          type: ["string", "null"]
+        authenticator:
+          type: ["string", "null"]
+        notorietyTier:
+          type: ["string", "null"]
+        imageUrls:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        watchCount:
+          type: number
+        isWatched:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ItemListResponse:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemSummary"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+
+    ItemInput:
+      type: object
+      required: [name, category]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        description:
+          type: string
+        provenanceNotes:
+          type: string
+        year:
+          type: number
+        sourceEvent:
+          type: string
+        authenticator:
+          type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
+
+    ItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+        description:
+          type: string
+        provenanceNotes:
+          type: string
+        year:
+          type: number
+        sourceEvent:
+          type: string
+        authenticator:
+          type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
+
+    ItemStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+
+    SaleRecord:
+      type: object
+      required: [id, itemId, salePrice, saleDate, saleSource, verified, createdAt]
+      properties:
+        id:
+          type: number
+        itemId:
+          type: number
+        itemName:
+          type: ["string", "null"]
+        itemSlug:
+          type: ["string", "null"]
+        salePrice:
+          type: number
+        saleDate:
+          type: string
+        saleSource:
+          type: string
+          enum: [auction_house, private, marketplace, admin_estimate]
+        sourceName:
+          type: ["string", "null"]
+        conditionGrade:
+          type: ["string", "null"]
+        authenticationStatus:
+          type: ["string", "null"]
+        verified:
+          type: boolean
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    SaleInput:
+      type: object
+      required: [salePrice, saleDate, saleSource]
+      properties:
+        salePrice:
+          type: number
+        saleDate:
+          type: string
+        saleSource:
+          type: string
+          enum: [auction_house, private, marketplace, admin_estimate]
+        sourceName:
+          type: string
+        conditionGrade:
+          type: string
+          enum: [poor, fair, good, excellent, mint]
+        authenticationStatus:
+          type: string
+          enum: [authenticated, unauthenticated, disputed]
+        verified:
+          type: boolean
+        notes:
+          type: string
+
+    SaleUpdate:
+      type: object
+      properties:
+        salePrice:
+          type: number
+        saleDate:
+          type: string
+        saleSource:
+          type: string
+          enum: [auction_house, private, marketplace, admin_estimate]
+        sourceName:
+          type: string
+        conditionGrade:
+          type: string
+          enum: [poor, fair, good, excellent, mint]
+        authenticationStatus:
+          type: string
+          enum: [authenticated, unauthenticated, disputed]
+        notes:
+          type: string
+
+    ValuationSegment:
+      type: object
+      required: [conditionGrade, authenticationStatus, sampleSize]
+      properties:
+        conditionGrade:
+          type: ["string", "null"]
+        authenticationStatus:
+          type: ["string", "null"]
+        sampleSize:
+          type: number
+        lowEstimate:
+          type: ["number", "null"]
+        medianEstimate:
+          type: ["number", "null"]
+        highEstimate:
+          type: ["number", "null"]
+        confidence:
+          type: ["string", "null"]
+        singleSaleNote:
+          type: ["string", "null"]
+        sales:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaleRecord"
+
+    ValuationResult:
+      type: object
+      required: [itemId, tierUsed, segments, computedAt]
+      properties:
+        itemId:
+          type: number
+        itemSlug:
+          type: string
+        tierUsed:
+          type: string
+          enum: [A, B, C]
+        segments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValuationSegment"
+        categoryRangeNote:
+          type: ["string", "null"]
+        categoryLow:
+          type: ["number", "null"]
+        categoryHigh:
+          type: ["number", "null"]
+        computedAt:
+          type: string
+
+    CompMatch:
+      type: object
+      required: [id, compItemId, similarityScore]
+      properties:
+        id:
+          type: number
+        compItemId:
+          type: number
+        compItemName:
+          type: string
+        compItemSlug:
+          type: string
+        similarityScore:
+          type: number
+        matchReason:
+          type: ["string", "null"]
+
+    WatchlistInput:
+      type: object
+      required: [itemId]
+      properties:
+        itemId:
+          type: number
+
+    WatchlistEntry:
+      type: object
+      required: [id, userId, itemId, createdAt]
+      properties:
+        id:
+          type: number
+        userId:
+          type: number
+        itemId:
+          type: number
+        createdAt:
+          type: string
+
+    Category:
+      type: object
+      required: [name, itemCount]
+      properties:
+        name:
+          type: string
+        itemCount:
+          type: number
+        subcategories:
+          type: array
+          items:
+            type: string
+
+    SiteStats:
+      type: object
+      required: [totalItems, totalSales, totalCategories, verifiedSales, pendingVerification]
+      properties:
+        totalItems:
+          type: number
+        totalSales:
+          type: number
+        totalCategories:
+          type: number
+        verifiedSales:
+          type: number
+        pendingVerification:
+          type: number
+        tierBreakdown:
+          type: object
+          properties:
+            A:
+              type: number
+            B:
+              type: number
+            C:
+              type: number
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentActivityItem"
+
+    RecentActivityItem:
+      type: object
+      required: [type, itemName, itemSlug, timestamp]
+      properties:
+        type:
+          type: string
+          enum: [item_added, sale_verified, item_approved]
+        itemName:
+          type: string
+        itemSlug:
+          type: string
+        timestamp:
+          type: string

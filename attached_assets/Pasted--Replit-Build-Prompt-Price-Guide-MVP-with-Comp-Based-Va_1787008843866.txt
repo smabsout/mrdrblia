@@ -1,0 +1,237 @@
+# Replit Build Prompt — Price Guide MVP with Comp-Based Valuation Engine
+
+Paste everything below into Replit's AI builder / Agent as your initial prompt.
+
+---
+
+## Project Overview
+
+Build a full-stack price-guide web application (Phase 1 MVP — no marketplace, no payments). The core feature is an item catalog with a **comp-based valuation engine** that computes defensible, traceable price estimates from historical sale data. No AI-generated prices — all valuation output must be rule-based and auditable back to specific sale records.
+
+**Stack:**
+- Frontend: React + TypeScript + Vite + Tailwind CSS + shadcn/ui
+- Backend: Node.js + Express + TypeScript
+- Database: PostgreSQL + Drizzle ORM
+- Charts: Recharts
+- Auth: session-based (email/password only for MVP — use Lucia or a simple express-session + bcrypt setup)
+- Optional AI layer: OpenAI/Anthropic API for description normalization and similarity matching ONLY (never for generating the price number itself)
+
+---
+
+## Database Schema (Drizzle)
+
+### `items`
+```
+id            serial PK
+slug          text unique, not null
+name          text not null
+category      text not null
+subcategory   text
+description   text
+provenance_notes  text
+year          integer
+source_event  text          -- e.g. associated case/context, free text
+authenticator text          -- e.g. "PSA/DNA", "JSA", "none"
+image_urls    text[]
+notoriety_tier text         -- 'A' | 'B' | 'C' — see valuation logic below
+created_by    integer FK -> users.id
+status        text default 'pending'  -- 'pending' | 'approved' | 'rejected'
+created_at    timestamp default now()
+updated_at    timestamp default now()
+```
+
+### `sales` (the price_history table — renamed for clarity)
+```
+id              serial PK
+item_id         integer FK -> items.id, not null
+sale_price      numeric(10,2) not null
+sale_date       date not null
+sale_source     text not null     -- 'auction_house' | 'private' | 'marketplace' | 'admin_estimate'
+source_name     text              -- e.g. "Heritage Auctions", free text
+condition_grade text              -- 'poor' | 'fair' | 'good' | 'excellent' | 'mint'
+authentication_status text        -- 'authenticated' | 'unauthenticated' | 'disputed'
+verified        boolean default false   -- has an admin confirmed this sale actually happened?
+notes           text
+entered_by      integer FK -> users.id
+created_at      timestamp default now()
+```
+
+### `comp_matches` (precomputed similarity links — supports Tier B fallback)
+```
+id              serial PK
+item_id         integer FK -> items.id
+comp_item_id    integer FK -> items.id
+similarity_score numeric(4,3)   -- 0.000 to 1.000, from embedding cosine similarity
+match_reason    text            -- human-readable, e.g. "same case, same item type, no direct sale"
+created_at      timestamp default now()
+```
+
+### `valuation_cache`
+```
+item_id         integer PK FK -> items.id
+low_estimate    numeric(10,2)
+median_estimate numeric(10,2)
+high_estimate   numeric(10,2)
+confidence      text        -- 'low' | 'medium' | 'high'
+tier_used       text        -- 'A' | 'B' | 'C'
+sample_size     integer
+computed_at     timestamp default now()
+```
+
+### `users`
+```
+id            serial PK
+email         text unique not null
+password_hash text not null
+display_name  text
+role          text default 'user'   -- 'user' | 'admin'
+created_at    timestamp default now()
+```
+
+### `watchlist`
+```
+id       serial PK
+user_id  integer FK -> users.id
+item_id  integer FK -> items.id
+created_at timestamp default now()
+unique(user_id, item_id)
+```
+
+---
+
+## Valuation Engine — Exact Logic
+
+Implement this as a standalone, unit-testable module (`server/valuation.ts`), NOT inline in route handlers. This is the core IP of the product — build it carefully.
+
+### Step 1: Classify item into a notoriety/comp tier
+
+```
+Tier A = at least 2 verified sales exist for THIS EXACT item OR near-identical
+         reissues/duplicates of it (e.g. multiple prints of the same signed photo)
+Tier B = fewer than 2 direct sales, but comp_matches exist with similarity_score >= 0.75
+         against items with verified sales
+Tier C = no direct sales and no qualifying comps
+```
+
+Tier is computed at valuation time, not stored statically on the item — it changes as new sales are entered.
+
+### Step 2: Gather the sale set
+
+- **Tier A:** all `verified = true` sales where `item_id = this item` (or explicitly linked duplicate items)
+- **Tier B:** all `verified = true` sales from items in `comp_matches` where `similarity_score >= 0.75`, sorted by similarity descending, capped at top 10 comps
+- **Tier C:** no sale set — do not compute a numeric estimate. Show category-level range only (see Step 5).
+
+### Step 3: Apply recency weighting (exponential decay)
+
+For each sale, compute weight:
+
+```
+weight = 0.5 ^ (days_since_sale / half_life_days)
+```
+
+- `half_life_days = 180` (6 months) as the default constant — expose as a config value, not a magic number buried in code
+- A sale from today has weight 1.0; a sale from 6 months ago has weight 0.5; 12 months ago has weight 0.25; etc.
+
+### Step 4: Apply condition/authentication segmentation
+
+Do NOT average across condition tiers or authentication status — this produces misleading numbers.
+
+- Group sales by `condition_grade` + `authentication_status` combination
+- Within the item's detail page, show separate estimate bands per combination that has at least 1 sale (e.g. "Authenticated / Excellent: $X–$Y" and "Unauthenticated / Good: $A–$B" as separate rows)
+- If the item being valued has a known `authenticator` field, prioritize/highlight the matching segment first
+
+### Step 5: Compute the estimate
+
+For each segment with n ≥ 1 sales:
+
+```
+weighted_median = weighted_median(sale_prices, weights)
+low_estimate  = weighted_percentile(sale_prices, weights, 0.10)
+high_estimate = weighted_percentile(sale_prices, weights, 0.90)
+```
+
+If n = 1 for a segment: show that single sale price as a reference point, explicitly labeled "1 sale on record — not a statistical estimate," not as a low/median/high band.
+
+For Tier C items: no price computed. Display: "No comparable sales data. Category range for [category]: $X–$Y based on N unrelated sales" — pulled from a simple category-wide (not item-specific) query, clearly separated visually from item-level estimates.
+
+### Step 6: Confidence label
+
+```
+sample_size >= 8  -> 'high'
+sample_size 3-7   -> 'medium'
+sample_size 1-2   -> 'low'
+sample_size 0     -> no confidence label, show Tier C messaging instead
+```
+
+### Step 7: Caching
+
+- Recompute and write to `valuation_cache` whenever a `sales` row is inserted/updated/verified for that item, or nightly via cron for comp-based (Tier B) items whose comps changed
+- Item detail page reads from `valuation_cache`, not live computation, for page-load speed
+- Always show `computed_at` timestamp on the frontend so users know data freshness
+
+### Auditability requirement
+
+Every number shown on the frontend must be clickable/expandable to show the exact sale records that produced it (date, price, source, condition). This is non-negotiable for this category — an unexplainable number is a liability. Build the "show your work" UI panel as part of the item detail page, not as a stretch feature.
+
+---
+
+## AI Layer (optional, additive — build after the core engine works)
+
+Use an LLM API call ONLY for these two functions, each isolated in its own server module:
+
+**1. `normalizeItemDescription(rawText: string)`**
+- Input: messy admin-entered free text
+- Output: structured JSON `{ itemType, associatedCase, approxDate, materialType, notableFeatures[] }`
+- Prompt the model to return ONLY valid JSON, no prose. Validate/parse defensively (try/catch, schema check with zod) before writing to DB.
+
+**2. `computeSimilarity(itemA, itemB)`**
+- Generate text embeddings (via an embeddings endpoint) from a concatenation of `name + category + subcategory + source_event + normalized description`
+- Store embeddings, compute cosine similarity offline in a batch job, write results into `comp_matches`
+- This runs as a nightly job over newly added/edited items — not on every page load
+
+Do NOT let either function touch `sale_price`, `low_estimate`, `median_estimate`, or `high_estimate` fields. If you're tempted to add "AI suggested price" anywhere, don't — flag it in a code comment as explicitly out of scope for MVP.
+
+---
+
+## Pages to Build
+
+1. **Browse/Search** (`/`) — grid of approved items, full-text search (Postgres `tsvector` on name+description+category), category filter, sort by recently added / most watched
+2. **Item Detail** (`/items/:slug`) — photos, description, provenance, valuation bands (per Step 4 segmentation), price history table, expandable "show your work" panel, watchlist button
+3. **Admin: Add/Edit Item** (`/admin/items/new`, `/admin/items/:id/edit`) — form matching the `items` schema, triggers `normalizeItemDescription` on save
+4. **Admin: Add Sale Record** (`/admin/items/:id/sales/new`) — form matching `sales` schema, `verified` checkbox defaulted false, triggers valuation recompute on save
+5. **Admin: Verification Queue** (`/admin/sales/pending`) — list of unverified sales for admin to confirm before they count toward valuation
+6. **Auth** (`/login`, `/register`) — basic email/password
+7. **Watchlist** (`/watchlist`) — user's saved items, no alerts in MVP
+
+---
+
+## Build Order
+
+1. Scaffold Vite + React + TS + Tailwind + shadcn/ui; set up Express + Drizzle + Postgres connection
+2. Write and run migrations for all tables above
+3. Seed script: 20–30 sample items across 2–3 categories, with varied sale histories (include some Tier A, Tier B, and Tier C examples so you can test all branches)
+4. Build `server/valuation.ts` as a pure, unit-tested module — test each tier's logic independently with the seed data before touching the frontend
+5. Build item detail page consuming `valuation_cache` + the "show your work" expandable panel
+6. Build browse/search page
+7. Build auth
+8. Build admin item/sale entry forms + verification queue
+9. Wire up the nightly recompute cron (can be a simple `node-cron` job in the Express process for MVP — no need for a separate worker service yet)
+10. Add the AI normalization/similarity layer last, as an enhancement — the app must work correctly with 100% manual data entry before this is added
+
+---
+
+## Explicit Guardrails (do not violate these while building)
+
+- Never auto-generate a `sale_price`, `low_estimate`, `median_estimate`, or `high_estimate` value via LLM — these are computed only from the formulas in Steps 3–5
+- Never mark a `sales` row `verified = true` automatically — this is an admin-only manual action
+- Never scrape external sites for sale data — all `sales` rows are manually entered via the admin form
+- Every estimate shown must link back to underlying sale records (Step 7 auditability requirement)
+- Items default to `status = 'pending'` and are not publicly visible until an admin approves them
+
+---
+
+## Compliance Notes (build in from day one, not deferred)
+
+- Age-gate/content warning on site entry
+- Terms of Service page stub requiring provenance disclosure (even without a marketplace yet)
+- No payment processing anywhere in this MVP scope
