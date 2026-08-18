@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  <rect width="32" height="32" x="4" y="4" rx="6" fill="#2563eb"/>
+  <text x="20" y="24" font-family="Inter, sans-serif" font-size="16" font-weight="800" fill="white" text-anchor="middle">MC</text>
+  <text x="52" y="22" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">My</text>
+  <text x="52" y="36" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a">Collection</text>
+</svg>

@@ -3,8 +3,8 @@ import { MessageSquare, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@clerk/react";
 import { 
-  useGetMe,
   useListAnthropicConversations,
   useCreateAnthropicConversation,
   useListAnthropicMessages,
@@ -13,7 +13,7 @@ import {
 } from "@workspace/api-client-react";
 
 export function ChatDrawer() {
-  const { data: me } = useGetMe();
+  const { user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
@@ -24,7 +24,7 @@ export function ChatDrawer() {
 
   // Only run conversations query if drawer is open
   const { data: conversations } = useListAnthropicConversations({
-    query: { enabled: !!me && isOpen, queryKey: getListAnthropicConversationsQueryKey() }
+    query: { enabled: !!user && isOpen, queryKey: getListAnthropicConversationsQueryKey() }
   });
 
   const createConv = useCreateAnthropicConversation();
@@ -52,7 +52,7 @@ export function ChatDrawer() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedResponse]);
 
-  if (!me) return null;
+  if (!user) return null;
 
   const handleSend = async (overrideInput?: string) => {
     const text = overrideInput || input;

@@ -26,7 +26,7 @@ export default function PendingItems() {
         queryClient.invalidateQueries({ queryKey: getListPendingItemsQueryKey() });
       },
       onError: (err) => {
-        toast({ title: "Error", description: err.error, variant: "destructive" });
+        toast({ title: "Error", description: (err.data as any)?.error || err.message, variant: "destructive" });
       }
     });
   };

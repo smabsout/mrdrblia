@@ -38,7 +38,7 @@ export default function AddSaleForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createSale.mutate({
-      id: item.id,
+      itemId: item.id,
       data: {
         salePrice: parseFloat(formData.salePrice),
         saleDate: new Date(formData.saleDate).toISOString(),
@@ -53,7 +53,7 @@ export default function AddSaleForm() {
         toast({ title: "Sale recorded" });
         setLocation(`/items/${item.slug}`);
       },
-      onError: (err) => toast({ title: "Error", description: err.error, variant: "destructive" })
+      onError: (err) => toast({ title: "Error", description: err.data?.error || err.message, variant: "destructive" })
     });
   };
 

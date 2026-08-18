@@ -1,19 +1,21 @@
 import { Link } from "wouter";
 import { useGetWatchlist, getGetWatchlistQueryKey, useGetMe } from "@workspace/api-client-react";
+import { useUser } from "@clerk/react";
 import { Eye, AlertCircle } from "lucide-react";
 
 export default function Watchlist() {
   const { data: me } = useGetMe();
+  const { user } = useUser();
   const { data: watchlist, isLoading } = useGetWatchlist({
-    query: { enabled: !!me, queryKey: getGetWatchlistQueryKey() }
+    query: { enabled: !!user, queryKey: getGetWatchlistQueryKey() }
   });
 
-  if (!me) {
+  if (!user) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-lg">
         <h1 className="text-2xl font-bold mb-4">Watchlist</h1>
-        <p className="text-muted-foreground mb-6">Please log in to view your watchlist.</p>
-        <Link href="/login" className="text-primary hover:underline">Log In</Link>
+        <p className="text-muted-foreground mb-6">Please sign in to view your watchlist.</p>
+        <Link href="/sign-in" className="text-primary hover:underline">Sign In</Link>
       </div>
     );
   }

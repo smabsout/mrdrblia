@@ -1,2 +1,3 @@
 - [Orval Zod v3 compatibility](orval-zod-v3.md) — use type:number not type:integer in OpenAPI specs; avoid format:email
 - [Price Guide valuation engine](valuation-engine.md) — comp-based, never LLM-generated; cache pattern and tier logic
+- [Clerk auth migration](clerk-migration.md) — session→Clerk migration details, JIT provisioning, how to grant admin role after first sign-in

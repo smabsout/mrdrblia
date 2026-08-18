@@ -1,10 +1,12 @@
 import { defineConfig } from "drizzle-kit";
 import path from "path";
 
-const url = process.env.SUPABASE_DATABASE_URL ?? process.env.DATABASE_URL;
+// Always use the Replit-managed dev DATABASE_URL for migrations.
+// Production (Supabase) schema is managed via push-supabase.mjs.
+const url = process.env.DATABASE_URL;
 
 if (!url) {
-  throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL must be set");
+  throw new Error("DATABASE_URL must be set");
 }
 
 export default defineConfig({

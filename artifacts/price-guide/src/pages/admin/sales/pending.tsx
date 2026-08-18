@@ -26,7 +26,7 @@ export default function PendingSales() {
         queryClient.invalidateQueries({ queryKey: getListPendingSalesQueryKey() });
       },
       onError: (err) => {
-        toast({ title: "Error", description: err.error, variant: "destructive" });
+        toast({ title: "Error", description: err.data?.error || err.message, variant: "destructive" });
       }
     });
   };

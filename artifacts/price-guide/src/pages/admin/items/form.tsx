@@ -73,7 +73,7 @@ export default function AdminItemForm() {
           toast({ title: "Item updated" });
           setLocation(`/items/${res.slug}`);
         },
-        onError: (err) => toast({ title: "Error", description: err.error, variant: "destructive" })
+        onError: (err) => toast({ title: "Error", description: err.data?.error || err.message, variant: "destructive" })
       });
     } else {
       createItem.mutate({ data: payload }, {
@@ -81,7 +81,7 @@ export default function AdminItemForm() {
           toast({ title: "Item created" });
           setLocation(`/items/${res.slug}`);
         },
-        onError: (err) => toast({ title: "Error", description: err.error, variant: "destructive" })
+        onError: (err) => toast({ title: "Error", description: err.data?.error || err.message, variant: "destructive" })
       });
     }
   };

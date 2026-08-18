@@ -2,9 +2,12 @@ import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AgeGate } from "@/components/age-gate";
 import { ChatDrawer } from "@/components/chat-drawer";
-import { useGetMe, useLogout, useGetStats } from "@workspace/api-client-react";
-import { Search, User, Menu, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
+import { useGetMe, useGetStats } from "@workspace/api-client-react";
+import { useUser, useClerk } from "@clerk/react";
+import { User, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function StatsBar() {
   const { data: stats } = useGetStats();
@@ -41,14 +44,13 @@ function StatsBar() {
 }
 
 function Header() {
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const { data: me } = useGetMe();
-  const logout = useLogout();
   const [, setLocation] = useLocation();
 
   const handleLogout = () => {
-    logout.mutate(undefined, {
-      onSuccess: () => setLocation("/login"),
-    });
+    signOut({ redirectUrl: basePath || "/" });
   };
 
   return (
@@ -64,9 +66,9 @@ function Header() {
         </div>
 
         <nav className="flex items-center gap-4 text-sm">
-          {me ? (
+          {isLoaded && user ? (
             <>
-              {me.role === "admin" && (
+              {me?.role === "admin" && (
                 <Link href="/admin/items/pending" className="text-muted-foreground hover:text-primary transition-colors">
                   Admin
                 </Link>
@@ -76,22 +78,22 @@ function Header() {
               </Link>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="w-4 h-4" />
-                <span>{me.displayName || me.email}</span>
+                <span>{user.fullName || user.emailAddresses[0]?.emailAddress}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs h-8">
                 Log Out
               </Button>
             </>
-          ) : (
+          ) : isLoaded ? (
             <>
-              <Link href="/login" className="text-muted-foreground hover:text-primary transition-colors">
-                Log In
+              <Link href="/sign-in" className="text-muted-foreground hover:text-primary transition-colors">
+                Sign In
               </Link>
-              <Link href="/register">
-                <Button size="sm" className="text-xs h-8">Register</Button>
+              <Link href="/sign-up">
+                <Button size="sm" className="text-xs h-8">Sign Up</Button>
               </Link>
             </>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

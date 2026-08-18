@@ -2,7 +2,7 @@
  * Morbid — AI chat agent for the personal murderabilia collection tracker.
  *
  * Routes:
- *   GET  /anthropic/conversations          — list all conversations
+ *   GET  /anthropic/conversations          — list conversations for the current user
  *   POST /anthropic/conversations          — create a new conversation
  *   GET  /anthropic/conversations/:id      — get conversation + messages
  *   DELETE /anthropic/conversations/:id    — delete conversation
@@ -18,7 +18,7 @@ import {
   itemsTable,
   valuationCacheTable,
 } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { requireAuth } from "../../middlewares/auth.js";
 
@@ -26,7 +26,7 @@ const router: IRouter = Router();
 
 // ─── Build collection context for the system prompt ────────────────────────
 
-async function buildCollectionContext(userId: number): Promise<string> {
+async function buildCollectionContext(): Promise<string> {
   const rows = await db
     .select({
       name: itemsTable.name,
@@ -87,6 +87,7 @@ router.get("/anthropic/conversations", requireAuth, async (req, res): Promise<vo
   const rows = await db
     .select()
     .from(conversations)
+    .where(eq(conversations.clerkUserId, req.clerkUserId!))
     .orderBy(desc(conversations.createdAt));
   res.json(rows);
 });
@@ -99,7 +100,10 @@ router.post("/anthropic/conversations", requireAuth, async (req, res): Promise<v
     res.status(400).json({ error: "title is required" });
     return;
   }
-  const [conv] = await db.insert(conversations).values({ title }).returning();
+  const [conv] = await db
+    .insert(conversations)
+    .values({ title, clerkUserId: req.clerkUserId! })
+    .returning();
   res.status(201).json(conv);
 });
 
@@ -107,7 +111,10 @@ router.post("/anthropic/conversations", requireAuth, async (req, res): Promise<v
 
 router.get("/anthropic/conversations/:id", requireAuth, async (req, res): Promise<void> => {
   const id = parseId(req.params.id);
-  const [conv] = await db.select().from(conversations).where(eq(conversations.id, id));
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.clerkUserId, req.clerkUserId!)));
   if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
 
   const msgs = await db
@@ -123,7 +130,10 @@ router.get("/anthropic/conversations/:id", requireAuth, async (req, res): Promis
 
 router.delete("/anthropic/conversations/:id", requireAuth, async (req, res): Promise<void> => {
   const id = parseId(req.params.id);
-  const deleted = await db.delete(conversations).where(eq(conversations.id, id)).returning();
+  const deleted = await db
+    .delete(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.clerkUserId, req.clerkUserId!)))
+    .returning();
   if (!deleted.length) { res.status(404).json({ error: "Conversation not found" }); return; }
   res.status(204).end();
 });
@@ -132,6 +142,13 @@ router.delete("/anthropic/conversations/:id", requireAuth, async (req, res): Pro
 
 router.get("/anthropic/conversations/:id/messages", requireAuth, async (req, res): Promise<void> => {
   const id = parseId(req.params.id);
+  // Verify ownership
+  const [conv] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.clerkUserId, req.clerkUserId!)));
+  if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
+
   const msgs = await db
     .select()
     .from(messages)
@@ -151,7 +168,10 @@ router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, re
     return;
   }
 
-  const [conv] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, conversationId), eq(conversations.clerkUserId, req.clerkUserId!)));
   if (!conv) { res.status(404).json({ error: "Conversation not found" }); return; }
 
   // Persist the user message
@@ -170,8 +190,7 @@ router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, re
   }));
 
   // Inject collection context into system prompt
-  const userId = req.session.userId!;
-  const collectionContext = await buildCollectionContext(userId);
+  const collectionContext = await buildCollectionContext();
   const fullSystemPrompt = `${SYSTEM_PROMPT}\n\n---\n\n${collectionContext}`;
 
   // Stream SSE response
@@ -197,13 +216,12 @@ router.post("/anthropic/conversations/:id/messages", requireAuth, async (req, re
       }
     }
 
-    // Persist assistant response
     if (fullResponse) {
       await db.insert(messages).values({ conversationId, role: "assistant", content: fullResponse });
     }
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-  } catch (err) {
+  } catch {
     res.write(`data: ${JSON.stringify({ error: "Failed to generate response" })}\n\n`);
   } finally {
     res.end();

@@ -22,7 +22,7 @@ router.post("/admin/items", requireAdmin, async (req, res): Promise<void> => {
     return;
   }
 
-  const userId = req.session.userId!;
+  const userId = req.userId!;
 
   // Auto-generate slug if not provided
   let slug: string = req.body.slug ?? slugify(name);
@@ -179,7 +179,7 @@ router.post("/admin/items/:itemId/sales", requireAdmin, async (req, res): Promis
       authenticationStatus: authenticationStatus ?? null,
       verified: Boolean(verified),
       notes: notes ?? null,
-      enteredBy: req.session.userId!,
+      enteredBy: req.userId!,
     })
     .returning();
 

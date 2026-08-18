@@ -12,7 +12,7 @@ router.get("/items", async (req, res): Promise<void> => {
   const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) || "24", 10)));
   const offset = (page - 1) * limit;
 
-  const userId = req.session?.userId ?? null;
+  const userId = req.userId ?? null;
 
   const conditions = [eq(itemsTable.status, "approved")];
   if (category) conditions.push(eq(itemsTable.category, category));
@@ -84,7 +84,7 @@ router.get("/items", async (req, res): Promise<void> => {
 
 router.get("/items/:slug", async (req, res): Promise<void> => {
   const { slug } = req.params as { slug: string };
-  const userId = req.session?.userId ?? null;
+  const userId = req.userId ?? null;
 
   const [row] = await db
     .select({

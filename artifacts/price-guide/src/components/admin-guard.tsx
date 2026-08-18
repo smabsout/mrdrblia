@@ -1,10 +1,10 @@
-import { useGetMe } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { ReactNode } from "react";
 import { Link } from "wouter";
 import { ShieldAlert } from "lucide-react";
 
 export function AdminGuard({ children }: { children: ReactNode }) {
-  const { data: user, isLoading, isError } = useGetMe({ query: { retry: false }});
+  const { data: user, isLoading, isError } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() }});
   
   if (isLoading) return <div className="animate-pulse h-64 bg-muted/50 rounded-md"></div>;
   

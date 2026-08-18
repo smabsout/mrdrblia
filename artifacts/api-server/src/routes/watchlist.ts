@@ -7,7 +7,7 @@ import { requireAuth } from "../middlewares/auth.js";
 const router: IRouter = Router();
 
 router.get("/watchlist", requireAuth, async (req, res): Promise<void> => {
-  const userId = req.session.userId!;
+  const userId = req.userId!;
 
   const rows = await db
     .select({
@@ -43,7 +43,7 @@ router.get("/watchlist", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/watchlist", requireAuth, async (req, res): Promise<void> => {
-  const userId = req.session.userId!;
+  const userId = req.userId!;
   const { itemId } = req.body;
 
   if (!itemId) {
@@ -70,7 +70,7 @@ router.post("/watchlist", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.delete("/watchlist/:itemId", requireAuth, async (req, res): Promise<void> => {
-  const userId = req.session.userId!;
+  const userId = req.userId!;
   const raw = Array.isArray(req.params.itemId) ? req.params.itemId[0] : req.params.itemId;
   const itemId = parseInt(raw, 10);
 
