@@ -127,7 +127,7 @@ export function ChatDrawer() {
         className={`fixed bottom-6 right-6 z-40 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform duration-200 flex items-center gap-2 ${isOpen ? 'scale-0' : 'scale-100'}`}
       >
         <MessageSquare className="w-5 h-5" />
-        <span className="font-bold">Ask AI</span>
+        <span className="font-bold">Morbid</span>
       </button>
 
       {/* Backdrop */}
@@ -145,7 +145,7 @@ export function ChatDrawer() {
         <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
           <h2 className="font-bold flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-primary" />
-            Collection AI
+            Morbid AI
           </h2>
           <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -155,7 +155,7 @@ export function ChatDrawer() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
           {messages?.length === 0 && !isStreaming && (
             <div className="text-center text-muted-foreground mt-8 text-sm">
-              <p>Ask about your collection.</p>
+              <p>Ask Morbid about your collection.</p>
             </div>
           )}
           
@@ -199,7 +199,7 @@ export function ChatDrawer() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your collection..."
+              placeholder="Ask Morbid..."
               className="text-sm shadow-none"
               disabled={isStreaming}
             />

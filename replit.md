@@ -1,6 +1,6 @@
-# My Collection — Price Guide MVP
+# The Provenance — Price Guide MVP
 
-A full-stack collectibles price guide and collection tracker with a comp-based valuation engine. Admins catalog items and enter verified historical sale records. The engine computes defensible low/median/high price estimates using exponential decay weighting and condition segmentation — no AI-generated prices. Every number links back to the real sale records that produced it.
+A full-stack collectibles price guide with a comp-based valuation engine. Admins catalog items and enter verified historical sale records. The engine computes defensible low/median/high price estimates using exponential decay weighting and condition segmentation — no AI-generated prices. Every number links back to the real sale records that produced it.
 
 ## Run & Operate
 

@@ -1,3 +1,14 @@
+/**
+ * Morbid — AI chat agent for the personal murderabilia collection tracker.
+ *
+ * Routes:
+ *   GET  /anthropic/conversations          — list conversations for the current user
+ *   POST /anthropic/conversations          — create a new conversation
+ *   GET  /anthropic/conversations/:id      — get conversation + messages
+ *   DELETE /anthropic/conversations/:id    — delete conversation
+ *   GET  /anthropic/conversations/:id/messages  — list messages
+ *   POST /anthropic/conversations/:id/messages  — send message (SSE stream)
+ */
 
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
@@ -47,18 +58,20 @@ async function buildCollectionContext(): Promise<string> {
       ? `median est. $${Number(r.medianEstimate).toLocaleString()} (Tier ${r.tierUsed ?? "?"}, ${r.confidence ?? "?"} confidence)`
       : "no valuation data";
     const owned = r.owned ? "currently owned" : "previously owned / sold";
-    return `- ${r.name} (${r.category}${r.subcategory ? ` / ${r.subcategory}` : ""}, ${r.year ?? "year unknown"}) — ${owned}. Paid: ${price}. Value: ${estimate}. Auth: ${r.authenticator ?? "none"}.`;
+    return `- ${r.name} (${r.category}${r.subcategory ? ` / ${r.subcategory}` : ""}, ${r.year ?? "year unknown"}) — ${owned}. Paid: ${price}. Value: ${estimate}. Auth: ${r.authenticator ?? "none"}. Case: ${r.sourceEvent ?? "unspecified"}.`;
   });
 
   return `The user's collection (${rows.length} items):\n${lines.join("\n")}`;
 }
 
-const SYSTEM_PROMPT = `You are a knowledgeable collectibles expert helping the user understand and manage their personal collection.
+const SYSTEM_PROMPT = `You are Morbid, a knowledgeable true-crime and murderabilia domain expert helping the user understand and manage their personal collection.
 
 Your role:
-- Answer questions about specific items, their history, rarity, and factors that affect value, using well-established facts. When you are not certain of a detail, say so rather than inventing it.
-- Help the user understand WHY an item might be valued the way it is (rarity, condition, authentication status, provenance, market demand) — but always defer to the app's computed valuation numbers rather than inventing your own price estimate. If asked for a price, restate the app's computed low/median/high band and cite the underlying sale count. Do not generate a new number.
-- Help surface patterns in the user's collection (e.g. "you have several items from the same era" or "your sports memorabilia is heavily weighted toward baseball").
+- Answer questions about specific criminal cases, historical context, and notoriety factors relevant to items in the collection, using only well-established, publicly documented facts. When you are not certain of a detail, say so rather than inventing it.
+- Help the user understand WHY an item might be valued the way it is (notoriety of the case, rarity, authentication status, condition) — but always defer to the app's computed valuation numbers rather than inventing your own price estimate. If asked for a price, restate the app's computed low/median/high band and cite the underlying sale count. Do not generate a new number.
+- Help surface patterns in the user's collection (e.g. "you have three items tied to cases from the same decade").
+- Decline to help with anything about acquiring items from active/ongoing criminal cases, contacting incarcerated individuals for solicitation purposes, or anything that could constitute harassment of victims or victims' families.
+- Do not glorify perpetrators or minimize harm to victims — keep discussion factual and contextual, not sensationalized.
 
 You are not a licensed appraiser. If asked for a formal appraisal, recommend a professional authenticator/appraiser for anything with real transaction stakes.
 
