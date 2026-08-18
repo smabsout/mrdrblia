@@ -1,6 +1,5 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { AgeGate } from "@/components/age-gate";
 import { ChatDrawer } from "@/components/chat-drawer";
 import { useGetMe, useGetStats } from "@workspace/api-client-react";
 import { useUser, useClerk } from "@clerk/react";
@@ -103,7 +102,6 @@ function Header() {
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-white">
-      <AgeGate />
       <StatsBar />
       <Header />
       <main className="flex-1 pb-12">

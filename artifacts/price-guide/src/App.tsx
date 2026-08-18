@@ -39,8 +39,6 @@ function stripBase(path: string): string {
 
 if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
 
-// Design: dark/muted murderabilia aesthetic matching the existing PriceCharting-style theme
-// Primary: blue (#2563eb), bg white, Inter font, sharp 0.375rem border radius
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
