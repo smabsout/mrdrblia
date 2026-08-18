@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import { AgeGate } from "@/components/age-gate";
 import { useGetMe, useLogout, useGetStats } from "@workspace/api-client-react";
 import { Search, User, Menu, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,7 @@ function Header() {
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-white">
+      <AgeGate />
       <StatsBar />
       <Header />
       <main className="flex-1 pb-12">

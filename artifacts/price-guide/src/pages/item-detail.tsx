@@ -141,38 +141,71 @@ export default function ItemDetail() {
           {/* Prices Table */}
           <section>
             <h2 className="text-xl font-bold mb-4">Prices</h2>
-            <div className="bg-white border rounded shadow-sm overflow-x-auto">
-              <table className="w-full text-center">
-                <thead>
-                  <tr>
-                    <th className="text-left w-1/4">Auth Status</th>
-                    {conditions.map(c => (
-                      <th key={c} className="capitalize">{c}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {authStatuses.map(auth => (
-                    <tr key={auth}>
-                      <td className="text-left font-medium capitalize text-muted-foreground bg-muted/20 border-r">{auth}</td>
-                      {conditions.map(c => {
-                        const seg = valuation?.segments.find(s => s.authenticationStatus === auth && s.conditionGrade === c);
-                        return (
-                          <td key={c} className={`font-mono text-sm ${seg ? 'font-bold' : 'text-muted-foreground'}`}>
-                            {seg?.medianEstimate ? `$${seg.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
-                          </td>
-                        );
-                      })}
+            
+            {valuation?.tierUsed === "C" ? (
+              <div className="bg-muted border rounded p-6 text-center">
+                <div className="inline-block bg-gray-200 text-gray-800 text-xs font-bold uppercase tracking-wider px-2 py-1 rounded mb-3">
+                  Category-Level Estimate
+                </div>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                  {valuation.categoryRangeNote || "No comparable sales data available for this item."}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white border rounded shadow-sm overflow-x-auto">
+                <table className="w-full text-center">
+                  <thead>
+                    <tr>
+                      <th className="text-left w-1/4">Auth Status</th>
+                      {conditions.map(c => (
+                        <th key={c} className="capitalize">{c}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {authStatuses.map(auth => (
+                      <tr key={auth}>
+                        <td className="text-left font-medium capitalize text-muted-foreground bg-muted/20 border-r align-top py-3">{auth}</td>
+                        {conditions.map(c => {
+                          const seg = valuation?.segments.find(s => s.authenticationStatus === auth && s.conditionGrade === c);
+                          return (
+                            <td key={c} className={`font-mono text-sm align-top p-2 ${seg ? 'font-bold' : 'text-muted-foreground'}`}>
+                              {seg ? (
+                                seg.singleSaleNote ? (
+                                  <div className="bg-amber-50 text-amber-900 text-left text-[10px] leading-tight p-2 rounded border border-amber-200 font-sans font-normal w-40 mx-auto">
+                                    <div className="font-bold flex items-center gap-1 mb-1 text-amber-700">
+                                      <AlertCircle className="w-3 h-3"/> 1 sale on record
+                                    </div>
+                                    <div className="mb-1 text-amber-800 font-medium">Sale price: ${seg.medianEstimate?.toLocaleString()}</div>
+                                    <div className="text-amber-800/80 italic">{seg.singleSaleNote}</div>
+                                  </div>
+                                ) : (
+                                  seg.medianEstimate ? `$${seg.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"
+                                )
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
             
             {valuation && (
-              <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
-                <div>Based on <strong className="text-foreground">{valuation.segments.reduce((acc, s) => acc + s.sampleSize, 0)}</strong> verified sales</div>
-                <div>Algorithm Tier: <strong className="text-foreground">{valuation.tierUsed}</strong></div>
+              <div className="mt-3 flex flex-col gap-1">
+                {valuation.tierUsed !== "C" && (
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <div>Based on <strong className="text-foreground">{valuation.segments.reduce((acc, s) => acc + s.sampleSize, 0)}</strong> verified sales</div>
+                    <div>Algorithm Tier: <strong className="text-foreground">{valuation.tierUsed}</strong></div>
+                  </div>
+                )}
+                <div className="text-xs text-gray-400">
+                  Estimates last computed: {new Date(valuation.computedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                </div>
               </div>
             )}
           </section>

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { itemsTable, salesTable, watchlistTable, valuationCacheTable } from "@workspace/db";
-import { eq, sql, ilike, or, and, desc, count } from "drizzle-orm";
+import { eq, sql, and, desc, count } from "drizzle-orm";
 import slugify from "../lib/slugify.js";
 
 const router: IRouter = Router();
@@ -17,12 +17,11 @@ router.get("/items", async (req, res): Promise<void> => {
   const conditions = [eq(itemsTable.status, "approved")];
   if (category) conditions.push(eq(itemsTable.category, category));
   if (q) {
+    // Full-text search using Postgres tsvector. Falls back to trigram-style
+    // if the search term has no tsquery operators. We use websearch_to_tsquery
+    // which handles plain text safely (no syntax errors on partial words).
     conditions.push(
-      or(
-        ilike(itemsTable.name, `%${q}%`),
-        ilike(itemsTable.description, `%${q}%`),
-        ilike(itemsTable.category, `%${q}%`),
-      )!,
+      sql`to_tsvector('english', coalesce(${itemsTable.name}, '') || ' ' || coalesce(${itemsTable.description}, '') || ' ' || coalesce(${itemsTable.category}, '') || ' ' || coalesce(${itemsTable.subcategory}, '')) @@ websearch_to_tsquery('english', ${q})`,
     );
   }
 

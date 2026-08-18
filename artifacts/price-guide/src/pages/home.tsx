@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useListCategories, useListItems, getListItemsQueryKey } from "@workspace/api-client-react";
+import { useListCategories, useListItems, getListItemsQueryKey, ListItemsSort } from "@workspace/api-client-react";
 import { Search, Eye, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("");
+  const [sort, setSort] = useState<ListItemsSort>("recent");
   const [page, setPage] = useState(1);
   const [, setLocation] = useLocation();
 
@@ -17,12 +18,13 @@ export default function Home() {
     { 
       q: search || undefined, 
       category: activeCategory || undefined,
+      sort,
       page,
       limit: 50 
     },
     {
       query: {
-        queryKey: getListItemsQueryKey({ q: search || undefined, category: activeCategory || undefined, page, limit: 50 }),
+        queryKey: getListItemsQueryKey({ q: search || undefined, category: activeCategory || undefined, sort, page, limit: 50 }),
       }
     }
   );
@@ -51,31 +53,45 @@ export default function Home() {
         </form>
       </div>
 
-      {/* Category Tabs */}
-      <div className="mb-6 border-b flex gap-6 overflow-x-auto hide-scrollbar">
-        <button
-          onClick={() => { setActiveCategory(""); setPage(1); }}
-          className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
-            activeCategory === "" 
-              ? "border-b-2 border-primary text-primary" 
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          All Categories
-        </button>
-        {categories?.map((cat) => (
+      {/* Category Tabs & Sort */}
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b gap-4 pb-2">
+        <div className="flex gap-6 overflow-x-auto hide-scrollbar w-full sm:w-auto">
           <button
-            key={cat.name}
-            onClick={() => { setActiveCategory(cat.name); setPage(1); }}
-            className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
-              activeCategory === cat.name 
+            onClick={() => { setActiveCategory(""); setPage(1); }}
+            className={`pb-1 text-sm font-medium whitespace-nowrap transition-colors ${
+              activeCategory === "" 
                 ? "border-b-2 border-primary text-primary" 
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {cat.name} <span className="text-xs text-muted-foreground/70 ml-1 font-mono">({cat.itemCount})</span>
+            All Categories
           </button>
-        ))}
+          {categories?.map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => { setActiveCategory(cat.name); setPage(1); }}
+              className={`pb-1 text-sm font-medium whitespace-nowrap transition-colors ${
+                activeCategory === cat.name 
+                  ? "border-b-2 border-primary text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {cat.name} <span className="text-xs text-muted-foreground/70 ml-1 font-mono">({cat.itemCount})</span>
+            </button>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-2 pb-1">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</span>
+          <select 
+            className="text-sm border rounded px-2 py-1 bg-white focus:ring-1 focus:ring-primary outline-none"
+            value={sort}
+            onChange={(e) => { setSort(e.target.value as ListItemsSort); setPage(1); }}
+          >
+            <option value="recent">Recently Added</option>
+            <option value="watched">Most Watched</option>
+          </select>
+        </div>
       </div>
 
       {/* Items Table */}
