@@ -4,8 +4,11 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-// Prefer SUPABASE_DATABASE_URL when set (production), fall back to Replit-managed DATABASE_URL (dev)
-const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
+// Use SUPABASE_DATABASE_URL only in production — dev always uses Replit's managed DATABASE_URL.
+// The dev workflow exports NODE_ENV=development, so this is safe without any secret changes.
+const supabaseUrl = process.env.NODE_ENV !== "development"
+  ? process.env.SUPABASE_DATABASE_URL
+  : undefined;
 const connectionString = supabaseUrl ?? process.env.DATABASE_URL;
 
 if (!connectionString) {
