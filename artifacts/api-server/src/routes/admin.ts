@@ -14,6 +14,7 @@ router.post("/admin/items", requireAdmin, async (req, res): Promise<void> => {
   const {
     name, category, subcategory, description, provenanceNotes,
     year, sourceEvent, authenticator, imageUrls,
+    purchasePrice, purchaseDate, purchaseSource, owned,
   } = req.body;
 
   if (!name || !category) {
@@ -44,6 +45,10 @@ router.post("/admin/items", requireAdmin, async (req, res): Promise<void> => {
       sourceEvent: sourceEvent ?? null,
       authenticator: authenticator ?? null,
       imageUrls: imageUrls ?? [],
+      purchasePrice: purchasePrice ? String(purchasePrice) : null,
+      purchaseDate: purchaseDate ?? null,
+      purchaseSource: purchaseSource ?? null,
+      owned: owned !== undefined ? Boolean(owned) : true,
       createdBy: userId,
       status: "pending",
     })
@@ -84,6 +89,7 @@ router.patch("/admin/items/:id", requireAdmin, async (req, res): Promise<void> =
   const {
     name, category, subcategory, description, provenanceNotes,
     year, sourceEvent, authenticator, imageUrls,
+    purchasePrice, purchaseDate, purchaseSource, owned,
   } = req.body;
 
   const [item] = await db
@@ -98,6 +104,10 @@ router.patch("/admin/items/:id", requireAdmin, async (req, res): Promise<void> =
       ...(sourceEvent !== undefined && { sourceEvent: sourceEvent ?? null }),
       ...(authenticator !== undefined && { authenticator: authenticator ?? null }),
       ...(imageUrls !== undefined && { imageUrls: imageUrls ?? [] }),
+      ...(purchasePrice !== undefined && { purchasePrice: purchasePrice ? String(purchasePrice) : null }),
+      ...(purchaseDate !== undefined && { purchaseDate: purchaseDate ?? null }),
+      ...(purchaseSource !== undefined && { purchaseSource: purchaseSource ?? null }),
+      ...(owned !== undefined && { owned: Boolean(owned) }),
     })
     .where(eq(itemsTable.id, id))
     .returning();

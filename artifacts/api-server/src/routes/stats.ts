@@ -73,6 +73,30 @@ router.get("/stats", async (_req, res): Promise<void> => {
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 10);
 
+  // Portfolio totals (collection tracking)
+  const [portfolioRow] = await db
+    .select({
+      totalSpent: sql<string>`SUM(CASE WHEN ${itemsTable.owned} = true AND ${itemsTable.purchasePrice} IS NOT NULL THEN ${itemsTable.purchasePrice}::numeric ELSE 0 END)`,
+      ownedCount: sql<number>`COUNT(*) FILTER (WHERE ${itemsTable.owned} = true)`,
+    })
+    .from(itemsTable)
+    .where(eq(itemsTable.status, "approved"));
+
+  const valuedItems = await db
+    .select({
+      medianEstimate: valuationCacheTable.medianEstimate,
+      purchasePrice: itemsTable.purchasePrice,
+    })
+    .from(itemsTable)
+    .innerJoin(valuationCacheTable, eq(itemsTable.id, valuationCacheTable.itemId))
+    .where(eq(itemsTable.status, "approved"));
+
+  const portfolioTotalEstimated = valuedItems.reduce(
+    (sum, r) => sum + (r.medianEstimate ? Number(r.medianEstimate) : 0),
+    0,
+  );
+  const portfolioTotalSpent = Number(portfolioRow?.totalSpent ?? 0);
+
   res.json({
     totalItems: Number(totalItemsRow.count),
     totalSales: Number(totalSalesRow.count),
@@ -81,6 +105,10 @@ router.get("/stats", async (_req, res): Promise<void> => {
     pendingVerification: Number(pendingRow.count),
     tierBreakdown,
     recentActivity,
+    portfolioTotalSpent,
+    portfolioTotalEstimated,
+    portfolioNetGainLoss: portfolioTotalEstimated - portfolioTotalSpent,
+    portfolioOwnedCount: Number(portfolioRow?.ownedCount ?? 0),
   });
 });
 

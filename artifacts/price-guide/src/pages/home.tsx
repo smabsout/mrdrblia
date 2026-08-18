@@ -38,12 +38,12 @@ export default function Home() {
     <div className="container mx-auto px-4 py-8">
       {/* Search Hero */}
       <div className="max-w-3xl mx-auto mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-6">Price Guide Database</h1>
+        <h1 className="text-3xl font-bold mb-6">Collection Dashboard</h1>
         <form onSubmit={handleSearch} className="flex gap-2">
           <Input 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search the catalog..." 
+            placeholder="Search my collection..." 
             className="flex-1 h-12 text-lg shadow-sm"
           />
           <Button type="submit" className="h-12 px-8 text-lg shadow-sm">
@@ -99,11 +99,13 @@ export default function Home() {
         <table className="w-full">
           <thead>
             <tr>
-              <th className="w-1/3">Item Name</th>
+              <th className="w-1/4">Item Name</th>
               <th>Category</th>
               <th>Year</th>
               <th>Authenticator</th>
+              <th className="text-right">Paid</th>
               <th className="text-right">Median Est.</th>
+              <th className="text-right">Gain/Loss</th>
               <th>Confidence</th>
               <th className="text-center w-16">Watch</th>
             </tr>
@@ -134,7 +136,18 @@ export default function Home() {
                   <td className="text-muted-foreground">{item.year || "-"}</td>
                   <td className="text-muted-foreground">{item.authenticator || "-"}</td>
                   <td className="text-right font-mono font-medium">
-                    {item.medianEstimate ? `$${item.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
+                    {item.purchasePrice != null ? `$${item.purchasePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
+                  </td>
+                  <td className="text-right font-mono font-medium">
+                    {item.medianEstimate != null ? `$${item.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
+                  </td>
+                  <td className="text-right font-mono font-medium">
+                    {item.unrealizedGainLoss != null && item.unrealizedGainLossPct != null ? (
+                      <span className={item.unrealizedGainLoss > 0 ? "text-green-600 dark:text-green-500" : item.unrealizedGainLoss < 0 ? "text-red-600 dark:text-red-500" : ""}>
+                        {item.unrealizedGainLoss > 0 ? "+" : ""}${item.unrealizedGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="text-xs ml-1">({item.unrealizedGainLossPct > 0 ? "+" : ""}{item.unrealizedGainLossPct.toFixed(1)}%)</span>
+                      </span>
+                    ) : "-"}
                   </td>
                   <td>
                     {item.confidence ? (

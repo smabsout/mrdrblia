@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { AgeGate } from "@/components/age-gate";
+import { ChatDrawer } from "@/components/chat-drawer";
 import { useGetMe, useLogout, useGetStats } from "@workspace/api-client-react";
 import { Search, User, Menu, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,23 @@ function StatsBar() {
   const { data: stats } = useGetStats();
   if (!stats) return null;
 
+  const totalSpent = stats.portfolioTotalSpent || 0;
+  const totalEst = stats.portfolioTotalEstimated || 0;
+  const netGain = stats.portfolioNetGainLoss || 0;
+  const ownedCount = stats.portfolioOwnedCount || 0;
+
   return (
-    <div className="bg-secondary text-secondary-foreground text-xs py-1.5 px-4 flex items-center justify-between border-b">
+    <div className="bg-secondary text-secondary-foreground text-xs py-1.5 px-4 flex flex-col md:flex-row items-center justify-between border-b gap-2">
       <div className="flex gap-6 overflow-x-auto whitespace-nowrap">
-        <span><strong className="font-mono">{stats.totalItems.toLocaleString()}</strong> Items Tracked</span>
-        <span><strong className="font-mono">{stats.verifiedSales.toLocaleString()}</strong> Verified Sales</span>
+        <span><strong className="font-mono">{ownedCount.toLocaleString()}</strong> Items Owned</span>
+        <span>Total Spent: <strong className="font-mono">${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+        <span>Total Est. Value: <strong className="font-mono">${totalEst.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+        <span className="flex items-center gap-1">
+          Net Gain/Loss: 
+          <strong className={`font-mono ${netGain > 0 ? 'text-green-600 dark:text-green-500' : netGain < 0 ? 'text-red-600 dark:text-red-500' : ''}`}>
+            {netGain > 0 ? '+' : ''}${netGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </strong>
+        </span>
       </div>
       <div className="hidden md:flex gap-6 whitespace-nowrap">
         {stats.pendingVerification > 0 && (
@@ -42,8 +55,8 @@ function Header() {
     <header className="border-b bg-background sticky top-0 z-10">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link href="/" className="font-bold text-lg text-primary flex items-center gap-2">
-          <span className="bg-primary text-white p-1 rounded">PG</span>
-          PriceGuide
+          <span className="bg-primary text-white p-1 rounded">MC</span>
+          My Collection
         </Link>
         
         <div className="flex-1 max-w-2xl mx-auto hidden md:block">
@@ -94,10 +107,11 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="flex-1 pb-12">
         {children}
       </main>
+      <ChatDrawer />
       <footer className="border-t py-6 bg-muted mt-auto">
         <div className="container mx-auto px-4 text-xs text-muted-foreground flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            &copy; {new Date().getFullYear()} PriceGuide. All data is for informational purposes.
+            &copy; {new Date().getFullYear()} My Collection. All data is for informational purposes.
           </div>
           <div className="flex gap-4">
             <Link href="/tos" className="hover:text-primary transition-colors">Terms of Service</Link>

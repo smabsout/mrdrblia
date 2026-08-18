@@ -50,22 +50,34 @@ router.get("/items", async (req, res): Promise<void> => {
     .from(itemsTable)
     .where(where);
 
-  const items = rows.map(({ item, watchCount, medianEstimate, confidence }) => ({
-    id: item.id,
-    slug: item.slug,
-    name: item.name,
-    category: item.category,
-    subcategory: item.subcategory,
-    year: item.year,
-    authenticator: item.authenticator,
-    notorietyTier: item.notorietyTier,
-    imageUrls: item.imageUrls,
-    status: item.status,
-    watchCount: Number(watchCount ?? 0),
-    medianEstimate: medianEstimate ? Number(medianEstimate) : null,
-    confidence,
-    createdAt: item.createdAt,
-  }));
+  const items = rows.map(({ item, watchCount, medianEstimate, confidence }) => {
+    const pp = item.purchasePrice ? Number(item.purchasePrice) : null;
+    const me = medianEstimate ? Number(medianEstimate) : null;
+    const gainLoss = me !== null && pp !== null ? me - pp : null;
+    const gainLossPct = gainLoss !== null && pp !== null && pp > 0 ? (gainLoss / pp) * 100 : null;
+    return {
+      id: item.id,
+      slug: item.slug,
+      name: item.name,
+      category: item.category,
+      subcategory: item.subcategory,
+      year: item.year,
+      authenticator: item.authenticator,
+      notorietyTier: item.notorietyTier,
+      imageUrls: item.imageUrls,
+      status: item.status,
+      watchCount: Number(watchCount ?? 0),
+      medianEstimate: me,
+      confidence,
+      purchasePrice: pp,
+      purchaseDate: item.purchaseDate,
+      purchaseSource: item.purchaseSource,
+      owned: item.owned,
+      unrealizedGainLoss: gainLoss,
+      unrealizedGainLossPct: gainLossPct,
+      createdAt: item.createdAt,
+    };
+  });
 
   res.json({ items, total, page, limit });
 });
@@ -98,6 +110,7 @@ router.get("/items/:slug", async (req, res): Promise<void> => {
 
   res.json({
     ...row.item,
+    purchasePrice: row.item.purchasePrice ? Number(row.item.purchasePrice) : null,
     watchCount: Number(row.watchCount ?? 0),
     isWatched,
   });

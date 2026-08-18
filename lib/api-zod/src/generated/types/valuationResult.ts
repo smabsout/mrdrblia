@@ -20,4 +20,10 @@ export interface ValuationResult {
   /** @nullable */
   categoryHigh?: number | null;
   computedAt: string;
+  /** @nullable */
+  purchasePrice?: number | null;
+  /** @nullable */
+  unrealizedGainLoss?: number | null;
+  /** @nullable */
+  unrealizedGainLossPct?: number | null;
 }

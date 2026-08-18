@@ -70,6 +70,17 @@ export interface ItemSummary {
   medianEstimate?: number | null;
   /** @nullable */
   confidence?: string | null;
+  /** @nullable */
+  purchasePrice?: number | null;
+  /** @nullable */
+  purchaseDate?: string | null;
+  /** @nullable */
+  purchaseSource?: string | null;
+  owned?: boolean;
+  /** @nullable */
+  unrealizedGainLoss?: number | null;
+  /** @nullable */
+  unrealizedGainLossPct?: number | null;
   createdAt: string;
 }
 
@@ -105,6 +116,13 @@ export interface ItemDetail {
   status: ItemDetailStatus;
   watchCount?: number;
   isWatched?: boolean;
+  /** @nullable */
+  purchasePrice?: number | null;
+  /** @nullable */
+  purchaseDate?: string | null;
+  /** @nullable */
+  purchaseSource?: string | null;
+  owned?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -127,6 +145,10 @@ export interface ItemInput {
   sourceEvent?: string;
   authenticator?: string;
   imageUrls?: string[];
+  purchasePrice?: number;
+  purchaseDate?: string;
+  purchaseSource?: string;
+  owned?: boolean;
 }
 
 export interface ItemUpdate {
@@ -139,6 +161,10 @@ export interface ItemUpdate {
   sourceEvent?: string;
   authenticator?: string;
   imageUrls?: string[];
+  purchasePrice?: number;
+  purchaseDate?: string;
+  purchaseSource?: string;
+  owned?: boolean;
 }
 
 export type ItemStatusInputStatus = typeof ItemStatusInputStatus[keyof typeof ItemStatusInputStatus];
@@ -306,6 +332,12 @@ export interface ValuationResult {
   /** @nullable */
   categoryHigh?: number | null;
   computedAt: string;
+  /** @nullable */
+  purchasePrice?: number | null;
+  /** @nullable */
+  unrealizedGainLoss?: number | null;
+  /** @nullable */
+  unrealizedGainLossPct?: number | null;
 }
 
 export interface CompMatch {
@@ -365,6 +397,46 @@ export interface SiteStats {
   pendingVerification: number;
   tierBreakdown?: SiteStatsTierBreakdown;
   recentActivity?: RecentActivityItem[];
+  /** @nullable */
+  portfolioTotalSpent?: number | null;
+  /** @nullable */
+  portfolioTotalEstimated?: number | null;
+  /** @nullable */
+  portfolioNetGainLoss?: number | null;
+  portfolioOwnedCount?: number;
+}
+
+export interface AnthropicConversation {
+  id: number;
+  title: string;
+  createdAt: string;
+}
+
+export interface AnthropicMessage {
+  id: number;
+  conversationId: number;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface AnthropicConversationInput {
+  title: string;
+}
+
+export interface AnthropicMessageInput {
+  content: string;
+}
+
+export interface AnthropicConversationWithMessages {
+  id: number;
+  title: string;
+  createdAt: string;
+  messages: AnthropicMessage[];
+}
+
+export interface AnthropicError {
+  error: string;
 }
 
 export type ListItemsParams = {

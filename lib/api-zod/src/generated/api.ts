@@ -96,6 +96,12 @@ export const ListItemsResponse = zod.object({
   "watchCount": zod.number().optional(),
   "medianEstimate": zod.number().nullish(),
   "confidence": zod.string().nullish(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
+  "unrealizedGainLoss": zod.number().nullish(),
+  "unrealizedGainLossPct": zod.number().nullish(),
   "createdAt": zod.string()
 })),
   "total": zod.number(),
@@ -127,6 +133,10 @@ export const GetItemResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "watchCount": zod.number().optional(),
   "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -171,7 +181,10 @@ export const GetItemValuationResponse = zod.object({
   "categoryRangeNote": zod.string().nullish(),
   "categoryLow": zod.number().nullish(),
   "categoryHigh": zod.number().nullish(),
-  "computedAt": zod.string()
+  "computedAt": zod.string(),
+  "purchasePrice": zod.number().nullish(),
+  "unrealizedGainLoss": zod.number().nullish(),
+  "unrealizedGainLossPct": zod.number().nullish()
 })
 
 
@@ -248,7 +261,11 @@ export const GetStatsResponse = zod.object({
   "itemName": zod.string(),
   "itemSlug": zod.string(),
   "timestamp": zod.string()
-})).optional()
+})).optional(),
+  "portfolioTotalSpent": zod.number().nullish(),
+  "portfolioTotalEstimated": zod.number().nullish(),
+  "portfolioNetGainLoss": zod.number().nullish(),
+  "portfolioOwnedCount": zod.number().optional()
 })
 
 
@@ -269,6 +286,12 @@ export const GetWatchlistResponseItem = zod.object({
   "watchCount": zod.number().optional(),
   "medianEstimate": zod.number().nullish(),
   "confidence": zod.string().nullish(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
+  "unrealizedGainLoss": zod.number().nullish(),
+  "unrealizedGainLossPct": zod.number().nullish(),
   "createdAt": zod.string()
 })
 export const GetWatchlistResponse = zod.array(GetWatchlistResponseItem)
@@ -312,7 +335,11 @@ export const CreateItemBody = zod.object({
   "year": zod.number().optional(),
   "sourceEvent": zod.string().optional(),
   "authenticator": zod.string().optional(),
-  "imageUrls": zod.array(zod.string()).optional()
+  "imageUrls": zod.array(zod.string()).optional(),
+  "purchasePrice": zod.number().optional(),
+  "purchaseDate": zod.string().optional(),
+  "purchaseSource": zod.string().optional(),
+  "owned": zod.boolean().optional()
 })
 
 export const CreateItemResponse = zod.object({
@@ -331,6 +358,10 @@ export const CreateItemResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "watchCount": zod.number().optional(),
   "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -355,6 +386,10 @@ export const ListPendingItemsResponseItem = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "watchCount": zod.number().optional(),
   "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -377,7 +412,11 @@ export const UpdateItemBody = zod.object({
   "year": zod.number().optional(),
   "sourceEvent": zod.string().optional(),
   "authenticator": zod.string().optional(),
-  "imageUrls": zod.array(zod.string()).optional()
+  "imageUrls": zod.array(zod.string()).optional(),
+  "purchasePrice": zod.number().optional(),
+  "purchaseDate": zod.string().optional(),
+  "purchaseSource": zod.string().optional(),
+  "owned": zod.boolean().optional()
 })
 
 export const UpdateItemResponse = zod.object({
@@ -396,6 +435,10 @@ export const UpdateItemResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "watchCount": zod.number().optional(),
   "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -428,6 +471,10 @@ export const UpdateItemStatusResponse = zod.object({
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "watchCount": zod.number().optional(),
   "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -545,5 +592,92 @@ export const VerifySaleResponse = zod.object({
   "notes": zod.string().nullish(),
   "createdAt": zod.string()
 })
+
+
+/**
+ * @summary List all conversations
+ */
+export const ListAnthropicConversationsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListAnthropicConversationsResponse = zod.array(ListAnthropicConversationsResponseItem)
+
+
+/**
+ * @summary Create a new conversation
+ */
+export const CreateAnthropicConversationBody = zod.object({
+  "title": zod.string()
+})
+
+export const CreateAnthropicConversationResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get conversation with messages
+ */
+export const GetAnthropicConversationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetAnthropicConversationResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "createdAt": zod.string(),
+  "messages": zod.array(zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "role": zod.string(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Delete a conversation
+ */
+export const DeleteAnthropicConversationParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const DeleteAnthropicConversationResponse = zod.void()
+
+
+/**
+ * @summary List messages in a conversation
+ */
+export const ListAnthropicMessagesParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const ListAnthropicMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "role": zod.string(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListAnthropicMessagesResponse = zod.array(ListAnthropicMessagesResponseItem)
+
+
+/**
+ * @summary Send a message and receive an AI response (SSE stream)
+ */
+export const SendAnthropicMessageParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const SendAnthropicMessageBody = zod.object({
+  "content": zod.string()
+})
+
+export const SendAnthropicMessageResponse = zod.unknown()
 
 

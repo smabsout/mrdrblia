@@ -17,4 +17,8 @@ export interface ItemInput {
   sourceEvent?: string;
   authenticator?: string;
   imageUrls?: string[];
+  purchasePrice?: number;
+  purchaseDate?: string;
+  purchaseSource?: string;
+  owned?: boolean;
 }

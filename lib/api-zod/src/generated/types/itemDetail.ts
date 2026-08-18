@@ -30,6 +30,13 @@ export interface ItemDetail {
   status: ItemDetailStatus;
   watchCount?: number;
   isWatched?: boolean;
+  /** @nullable */
+  purchasePrice?: number | null;
+  /** @nullable */
+  purchaseDate?: string | null;
+  /** @nullable */
+  purchaseSource?: string | null;
+  owned?: boolean;
   createdAt: string;
   updatedAt?: string;
 }

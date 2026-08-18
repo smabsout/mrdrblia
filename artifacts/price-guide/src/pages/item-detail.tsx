@@ -133,6 +133,33 @@ export default function ItemDetail() {
             <span className="font-medium">{item.watchCount || 0}</span>
           </div>
         </div>
+
+        {/* My Purchase Section */}
+        <div className="mt-6 bg-muted/30 p-4 border rounded shadow-sm">
+          <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-3">My Purchase</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="block text-muted-foreground text-xs">Paid</span>
+              <span className="font-mono font-medium">
+                {item.purchasePrice != null ? `$${item.purchasePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+              </span>
+            </div>
+            <div>
+              <span className="block text-muted-foreground text-xs">Purchase Date</span>
+              <span className="font-medium">{item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : "—"}</span>
+            </div>
+            <div>
+              <span className="block text-muted-foreground text-xs">Source</span>
+              <span className="font-medium">{item.purchaseSource || "—"}</span>
+            </div>
+            <div>
+              <span className="block text-muted-foreground text-xs">Status</span>
+              <span className="font-medium">
+                {item.purchasePrice != null ? (item.owned ? "Currently Owned" : "Previously Owned") : "—"}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
@@ -203,7 +230,23 @@ export default function ItemDetail() {
                     <div>Algorithm Tier: <strong className="text-foreground">{valuation.tierUsed}</strong></div>
                   </div>
                 )}
-                <div className="text-xs text-gray-400">
+                
+                {/* Gain/Loss Row */}
+                <div className="mt-2 text-sm">
+                  <span className="font-bold text-muted-foreground mr-2">Unrealized Gain/Loss vs. Purchase Price:</span>
+                  {valuation.purchasePrice == null ? (
+                    <span className="text-muted-foreground italic">Purchase price not recorded</span>
+                  ) : valuation.unrealizedGainLoss != null && valuation.unrealizedGainLossPct != null ? (
+                    <span className={`font-mono font-medium ${valuation.unrealizedGainLoss > 0 ? "text-green-600 dark:text-green-500" : valuation.unrealizedGainLoss < 0 ? "text-red-600 dark:text-red-500" : ""}`}>
+                      {valuation.unrealizedGainLoss > 0 ? "+" : ""}${valuation.unrealizedGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs ml-1">({valuation.unrealizedGainLossPct > 0 ? "+" : ""}{valuation.unrealizedGainLossPct.toFixed(1)}%)</span>
+                    </span>
+                  ) : (
+                    <span>—</span>
+                  )}
+                </div>
+
+                <div className="text-xs text-gray-400 mt-2">
                   Estimates last computed: {new Date(valuation.computedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
                 </div>
               </div>

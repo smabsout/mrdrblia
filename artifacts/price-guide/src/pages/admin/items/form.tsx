@@ -27,6 +27,10 @@ export default function AdminItemForm() {
     year: "",
     authenticator: "",
     description: "",
+    purchasePrice: "",
+    purchaseDate: "",
+    purchaseSource: "",
+    owned: true,
   });
 
   useEffect(() => {
@@ -37,6 +41,10 @@ export default function AdminItemForm() {
         year: item.year?.toString() || "",
         authenticator: item.authenticator || "",
         description: item.description || "",
+        purchasePrice: item.purchasePrice?.toString() || "",
+        purchaseDate: item.purchaseDate ? new Date(item.purchaseDate).toISOString().split('T')[0] : "",
+        purchaseSource: item.purchaseSource || "",
+        owned: item.owned ?? true,
       });
     }
   }, [item, isEdit]);
@@ -53,6 +61,10 @@ export default function AdminItemForm() {
       year: formData.year ? parseInt(formData.year) : undefined,
       authenticator: formData.authenticator || undefined,
       description: formData.description || undefined,
+      purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : undefined,
+      purchaseDate: formData.purchaseDate ? new Date(formData.purchaseDate).toISOString() : undefined,
+      purchaseSource: formData.purchaseSource || undefined,
+      owned: formData.owned,
     };
 
     if (isEdit && item) {
@@ -127,6 +139,55 @@ export default function AdminItemForm() {
             value={formData.description}
             onChange={e => setFormData({ ...formData, description: e.target.value })}
           />
+        </div>
+
+        <div className="mt-8 mb-4 border-t pt-6">
+          <h3 className="text-lg font-bold mb-4">Purchase Details</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="purchasePrice">Purchase Price (USD)</Label>
+              <Input 
+                id="purchasePrice" 
+                type="number"
+                step="0.01"
+                value={formData.purchasePrice}
+                onChange={e => setFormData({ ...formData, purchasePrice: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="purchaseDate">Purchase Date</Label>
+              <Input 
+                id="purchaseDate" 
+                type="date"
+                value={formData.purchaseDate}
+                onChange={e => setFormData({ ...formData, purchaseDate: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="purchaseSource">Purchase Source (e.g., Heritage Auctions, eBay)</Label>
+              <Input 
+                id="purchaseSource" 
+                value={formData.purchaseSource}
+                onChange={e => setFormData({ ...formData, purchaseSource: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="owned" 
+              checked={formData.owned}
+              onChange={e => setFormData({ ...formData, owned: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300"
+            />
+            <Label htmlFor="owned" className="font-normal text-sm">
+              I still own this item
+            </Label>
+          </div>
         </div>
 
         <div className="pt-4 border-t flex justify-end gap-2">

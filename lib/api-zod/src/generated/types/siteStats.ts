@@ -16,4 +16,11 @@ export interface SiteStats {
   pendingVerification: number;
   tierBreakdown?: SiteStatsTierBreakdown;
   recentActivity?: RecentActivityItem[];
+  /** @nullable */
+  portfolioTotalSpent?: number | null;
+  /** @nullable */
+  portfolioTotalEstimated?: number | null;
+  /** @nullable */
+  portfolioNetGainLoss?: number | null;
+  portfolioOwnedCount?: number;
 }

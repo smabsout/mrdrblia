@@ -27,5 +27,16 @@ export interface ItemSummary {
   medianEstimate?: number | null;
   /** @nullable */
   confidence?: string | null;
+  /** @nullable */
+  purchasePrice?: number | null;
+  /** @nullable */
+  purchaseDate?: string | null;
+  /** @nullable */
+  purchaseSource?: string | null;
+  owned?: boolean;
+  /** @nullable */
+  unrealizedGainLoss?: number | null;
+  /** @nullable */
+  unrealizedGainLossPct?: number | null;
   createdAt: string;
 }
