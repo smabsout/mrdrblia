@@ -69,7 +69,9 @@ catalog:
 autoInstallPeers: false
 
 onlyBuiltDependencies:
+  - '@clerk/shared'
   - '@swc/core'
+  - bcrypt
   - esbuild
   - msw
   - unrs-resolver
