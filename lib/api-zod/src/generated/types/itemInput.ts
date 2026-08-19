@@ -16,6 +16,7 @@ export interface ItemInput {
   year?: number;
   sourceEvent?: string;
   authenticator?: string;
+  notorietyTier?: string;
   imageUrls?: string[];
   purchasePrice?: number;
   purchaseDate?: string;

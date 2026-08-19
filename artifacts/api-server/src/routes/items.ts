@@ -27,9 +27,15 @@ router.get("/items", async (req, res): Promise<void> => {
 
   const where = and(...conditions);
 
-  const orderBy = sort === "watched"
-    ? [desc(sql`watch_count`), desc(itemsTable.createdAt)]
-    : [desc(itemsTable.createdAt)];
+  const orderBy = (() => {
+    switch (sort) {
+      case "watched": return [desc(sql`watch_count`), desc(itemsTable.createdAt)];
+      case "value_high": return [desc(sql`COALESCE(${valuationCacheTable.medianEstimate}, 0)`), desc(itemsTable.createdAt)];
+      case "value_low": return [sql`COALESCE(${valuationCacheTable.medianEstimate}, 0) ASC`, desc(itemsTable.createdAt)];
+      case "name": return [sql`${itemsTable.name} ASC`];
+      default: return [desc(itemsTable.createdAt)];
+    }
+  })();
 
   const rows = await db
     .select({

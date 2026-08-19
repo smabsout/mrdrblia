@@ -1,5 +1,5 @@
 import { useRoute, useLocation } from "wouter";
-import { useGetItem, useCreateItem, useUpdateItem, getGetItemQueryKey } from "@workspace/api-client-react";
+import { useGetItem, useCreateCollectionItem, useUpdateCollectionItem, getGetItemQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,8 +41,8 @@ export default function CollectionForm() {
     query: { enabled: isEdit && !!slug, queryKey: getGetItemQueryKey(slug!) },
   });
 
-  const createItem = useCreateItem();
-  const updateItem = useUpdateItem();
+  const createItem = useCreateCollectionItem();
+  const updateItem = useUpdateCollectionItem();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -50,6 +50,7 @@ export default function CollectionForm() {
     subcategory: "",
     year: "",
     authenticator: "",
+    notorietyTier: "",
     description: "",
     provenanceNotes: "",
     sourceEvent: "",
@@ -67,6 +68,7 @@ export default function CollectionForm() {
         subcategory: item.subcategory || "",
         year: item.year?.toString() || "",
         authenticator: item.authenticator || "",
+        notorietyTier: item.notorietyTier || "",
         description: item.description || "",
         provenanceNotes: item.provenanceNotes || "",
         sourceEvent: item.sourceEvent || "",
@@ -99,6 +101,7 @@ export default function CollectionForm() {
       subcategory: formData.subcategory || undefined,
       year: formData.year ? parseInt(formData.year) : undefined,
       authenticator: formData.authenticator || undefined,
+      notorietyTier: formData.notorietyTier || undefined,
       description: formData.description || undefined,
       provenanceNotes: formData.provenanceNotes || undefined,
       sourceEvent: formData.sourceEvent || undefined,
@@ -269,6 +272,8 @@ export default function CollectionForm() {
               <Label htmlFor="notorietyTier">Notoriety Tier</Label>
               <select
                 id="notorietyTier"
+                value={formData.notorietyTier}
+                onChange={(e) => set("notorietyTier", e.target.value)}
                 className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {NOTORIETY_TIERS.map((t) => (

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
@@ -11,15 +11,25 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Layout } from '@/components/layout';
 import Home from '@/pages/home';
-import TOS from '@/pages/tos';
-import Watchlist from '@/pages/watchlist';
-import ItemDetail from '@/pages/item-detail';
-import CollectionForm from '@/pages/collection-form';
-import AdminItemForm from '@/pages/admin/items/form';
-import PendingItems from '@/pages/admin/items/pending';
-import PendingSales from '@/pages/admin/sales/pending';
-import AddSaleForm from '@/pages/admin/sales/form';
 import NotFound from '@/pages/not-found';
+
+const TOS = lazy(() => import('@/pages/tos'));
+const Watchlist = lazy(() => import('@/pages/watchlist'));
+const ItemDetail = lazy(() => import('@/pages/item-detail'));
+const CollectionForm = lazy(() => import('@/pages/collection-form'));
+const Analytics = lazy(() => import('@/pages/analytics'));
+const AdminItemForm = lazy(() => import('@/pages/admin/items/form'));
+const PendingItems = lazy(() => import('@/pages/admin/items/pending'));
+const PendingSales = lazy(() => import('@/pages/admin/sales/pending'));
+const AddSaleForm = lazy(() => import('@/pages/admin/sales/form'));
+
+function LazyRoute({ component: Component }: { component: React.LazyExoticComponent<React.ComponentType> }) {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center text-muted-foreground">Loading...</div>}>
+      <Component />
+    </Suspense>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -135,16 +145,17 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/sign-in/*?" component={SignInPage} />
           <Route path="/sign-up/*?" component={SignUpPage} />
-          <Route path="/items/:slug" component={ItemDetail} />
-          <Route path="/tos" component={TOS} />
-          <Route path="/watchlist" component={Watchlist} />
-          <Route path="/collection/add" component={CollectionForm} />
-          <Route path="/collection/:slug/edit" component={CollectionForm} />
-          <Route path="/admin/items/new" component={AdminItemForm} />
-          <Route path="/admin/items/:slug/edit" component={AdminItemForm} />
-          <Route path="/admin/items/pending" component={PendingItems} />
-          <Route path="/admin/sales/pending" component={PendingSales} />
-          <Route path="/admin/items/:slug/sales/new" component={AddSaleForm} />
+          <Route path="/items/:slug">{() => <LazyRoute component={ItemDetail} />}</Route>
+          <Route path="/tos">{() => <LazyRoute component={TOS} />}</Route>
+          <Route path="/watchlist">{() => <LazyRoute component={Watchlist} />}</Route>
+          <Route path="/analytics">{() => <LazyRoute component={Analytics} />}</Route>
+          <Route path="/collection/add">{() => <LazyRoute component={CollectionForm} />}</Route>
+          <Route path="/collection/:slug/edit">{() => <LazyRoute component={CollectionForm} />}</Route>
+          <Route path="/admin/items/new">{() => <LazyRoute component={AdminItemForm} />}</Route>
+          <Route path="/admin/items/:slug/edit">{() => <LazyRoute component={AdminItemForm} />}</Route>
+          <Route path="/admin/items/pending">{() => <LazyRoute component={PendingItems} />}</Route>
+          <Route path="/admin/sales/pending">{() => <LazyRoute component={PendingSales} />}</Route>
+          <Route path="/admin/items/:slug/sales/new">{() => <LazyRoute component={AddSaleForm} />}</Route>
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>

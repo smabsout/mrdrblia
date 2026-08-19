@@ -1208,6 +1208,226 @@ export const useRemoveFromWatchlist = <TError = ErrorType<ErrorResponse>,
       return useMutation(getRemoveFromWatchlistMutationOptions(options));
     }
 
+export const getCreateCollectionItemUrl = () => {
+
+
+
+
+  return `/api/collection`
+}
+
+/**
+ * @summary Add an item to your collection (authenticated user)
+ */
+export const createCollectionItem = async (itemInput: ItemInput, options?: Parameters<typeof customFetch>[1]): Promise<ItemDetail> => {
+
+  return customFetch<ItemDetail>(getCreateCollectionItemUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(itemInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCollectionItemMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCollectionItem>>, TError,{data: BodyType<ItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCollectionItem>>, TError,{data: BodyType<ItemInput>}, TContext> => {
+
+const mutationKey = ['createCollectionItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCollectionItem>>, {data: BodyType<ItemInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCollectionItem(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCollectionItemMutationResult = NonNullable<Awaited<ReturnType<typeof createCollectionItem>>>
+    export type CreateCollectionItemMutationBody = BodyType<ItemInput>
+    export type CreateCollectionItemMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add an item to your collection (authenticated user)
+ */
+export const useCreateCollectionItem = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCollectionItem>>, TError,{data: BodyType<ItemInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCollectionItem>>,
+        TError,
+        {data: BodyType<ItemInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCollectionItemMutationOptions(options));
+    }
+
+export const getUpdateCollectionItemUrl = (id: number,) => {
+
+
+
+
+  return `/api/collection/${id}`
+}
+
+/**
+ * @summary Update an item you own in your collection
+ */
+export const updateCollectionItem = async (id: number,
+    itemUpdate: ItemUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ItemDetail> => {
+
+  return customFetch<ItemDetail>(getUpdateCollectionItemUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(itemUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateCollectionItemMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCollectionItem>>, TError,{id: number;data: BodyType<ItemUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCollectionItem>>, TError,{id: number;data: BodyType<ItemUpdate>}, TContext> => {
+
+const mutationKey = ['updateCollectionItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCollectionItem>>, {id: number;data: BodyType<ItemUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateCollectionItem(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCollectionItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateCollectionItem>>>
+    export type UpdateCollectionItemMutationBody = BodyType<ItemUpdate>
+    export type UpdateCollectionItemMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update an item you own in your collection
+ */
+export const useUpdateCollectionItem = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCollectionItem>>, TError,{id: number;data: BodyType<ItemUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCollectionItem>>,
+        TError,
+        {id: number;data: BodyType<ItemUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateCollectionItemMutationOptions(options));
+    }
+
+export const getExportCollectionUrl = () => {
+
+
+
+
+  return `/api/collection/export`
+}
+
+/**
+ * @summary Export your collection as CSV
+ */
+export const exportCollection = async ( options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getExportCollectionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportCollectionQueryKey = () => {
+    return [
+    `/api/collection/export`
+    ] as const;
+    }
+
+
+export const getExportCollectionQueryOptions = <TData = Awaited<ReturnType<typeof exportCollection>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportCollection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportCollectionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportCollection>>> = ({ signal }) => exportCollection({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportCollection>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportCollectionQueryResult = NonNullable<Awaited<ReturnType<typeof exportCollection>>>
+export type ExportCollectionQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Export your collection as CSV
+ */
+
+export function useExportCollection<TData = Awaited<ReturnType<typeof exportCollection>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportCollection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportCollectionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreateItemUrl = () => {
 
 

@@ -13,7 +13,7 @@ const router: IRouter = Router();
 router.post("/admin/items", requireAdmin, async (req, res): Promise<void> => {
   const {
     name, category, subcategory, description, provenanceNotes,
-    year, sourceEvent, authenticator, imageUrls,
+    year, sourceEvent, authenticator, notorietyTier, imageUrls,
     purchasePrice, purchaseDate, purchaseSource, owned,
   } = req.body;
 
@@ -44,6 +44,7 @@ router.post("/admin/items", requireAdmin, async (req, res): Promise<void> => {
       year: year ? Number(year) : null,
       sourceEvent: sourceEvent ?? null,
       authenticator: authenticator ?? null,
+      notorietyTier: notorietyTier ?? null,
       imageUrls: imageUrls ?? [],
       purchasePrice: purchasePrice ? String(purchasePrice) : null,
       purchaseDate: purchaseDate ?? null,
@@ -88,7 +89,7 @@ router.patch("/admin/items/:id", requireAdmin, async (req, res): Promise<void> =
 
   const {
     name, category, subcategory, description, provenanceNotes,
-    year, sourceEvent, authenticator, imageUrls,
+    year, sourceEvent, authenticator, notorietyTier, imageUrls,
     purchasePrice, purchaseDate, purchaseSource, owned,
   } = req.body;
 
@@ -103,6 +104,7 @@ router.patch("/admin/items/:id", requireAdmin, async (req, res): Promise<void> =
       ...(year !== undefined && { year: year ? Number(year) : null }),
       ...(sourceEvent !== undefined && { sourceEvent: sourceEvent ?? null }),
       ...(authenticator !== undefined && { authenticator: authenticator ?? null }),
+      ...(notorietyTier !== undefined && { notorietyTier: notorietyTier ?? null }),
       ...(imageUrls !== undefined && { imageUrls: imageUrls ?? [] }),
       ...(purchasePrice !== undefined && { purchasePrice: purchasePrice ? String(purchasePrice) : null }),
       ...(purchaseDate !== undefined && { purchaseDate: purchaseDate ?? null }),

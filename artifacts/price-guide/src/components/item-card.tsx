@@ -37,12 +37,29 @@ export function ItemCard({ item }: { item: ItemSummary }) {
 
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
-            {item.category}
-          </span>
-          {item.year && (
-            <span className="text-[10px] text-muted-foreground font-mono">{item.year}</span>
-          )}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+              {item.category}
+            </span>
+            {item.notorietyTier && (
+              <span className={cn(
+                "text-[9px] font-bold px-1 py-px rounded",
+                item.notorietyTier === "A" && "bg-primary/15 text-primary",
+                item.notorietyTier === "B" && "bg-amber-500/15 text-amber-400",
+                item.notorietyTier === "C" && "bg-muted text-muted-foreground",
+              )}>
+                T{item.notorietyTier}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {item.authenticator && (
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+            )}
+            {item.year && (
+              <span className="text-[10px] text-muted-foreground font-mono">{item.year}</span>
+            )}
+          </div>
         </div>
 
         <h3 className="font-semibold text-sm leading-snug mb-3 line-clamp-2 group-hover:text-primary transition-colors">

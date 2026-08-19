@@ -17,6 +17,7 @@ import {
   Package,
   DollarSign,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -112,6 +113,7 @@ function Header() {
   const navItems = [
     { href: "/", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/watchlist", icon: Bookmark, label: "Watchlist" },
+    { href: "/analytics", icon: BarChart3, label: "Analytics" },
     ...(me?.role === "admin"
       ? [{ href: "/admin/items/pending", icon: Settings, label: "Admin" }]
       : []),

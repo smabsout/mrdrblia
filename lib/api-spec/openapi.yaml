@@ -141,7 +141,7 @@ paths:
           name: sort
           schema:
             type: string
-            enum: [recent, watched]
+            enum: [recent, watched, value_high, value_low, name]
         - in: query
           name: page
           schema:
@@ -342,6 +342,99 @@ paths:
       responses:
         "204":
           description: Removed
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection:
+    post:
+      operationId: createCollectionItem
+      tags: [items]
+      summary: Add an item to your collection (authenticated user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetail"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/{id}:
+    patch:
+      operationId: updateCollectionItem
+      tags: [items]
+      summary: Update an item you own in your collection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetail"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not your item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /collection/export:
+    get:
+      operationId: exportCollection
+      tags: [items]
+      summary: Export your collection as CSV
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
         "401":
           description: Unauthenticated
           content:
@@ -849,6 +942,8 @@ components:
           type: string
         authenticator:
           type: string
+        notorietyTier:
+          type: string
         imageUrls:
           type: array
           items:
@@ -880,6 +975,8 @@ components:
         sourceEvent:
           type: string
         authenticator:
+          type: string
+        notorietyTier:
           type: string
         imageUrls:
           type: array

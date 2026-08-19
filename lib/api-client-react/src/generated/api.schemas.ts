@@ -144,6 +144,7 @@ export interface ItemInput {
   year?: number;
   sourceEvent?: string;
   authenticator?: string;
+  notorietyTier?: string;
   imageUrls?: string[];
   purchasePrice?: number;
   purchaseDate?: string;
@@ -160,6 +161,7 @@ export interface ItemUpdate {
   year?: number;
   sourceEvent?: string;
   authenticator?: string;
+  notorietyTier?: string;
   imageUrls?: string[];
   purchasePrice?: number;
   purchaseDate?: string;
@@ -453,5 +455,8 @@ export type ListItemsSort = typeof ListItemsSort[keyof typeof ListItemsSort];
 export const ListItemsSort = {
   recent: 'recent',
   watched: 'watched',
+  value_high: 'value_high',
+  value_low: 'value_low',
+  name: 'name',
 } as const;
 
