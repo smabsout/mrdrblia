@@ -14,6 +14,7 @@ import Home from '@/pages/home';
 import TOS from '@/pages/tos';
 import Watchlist from '@/pages/watchlist';
 import ItemDetail from '@/pages/item-detail';
+import CollectionForm from '@/pages/collection-form';
 import AdminItemForm from '@/pages/admin/items/form';
 import PendingItems from '@/pages/admin/items/pending';
 import PendingSales from '@/pages/admin/sales/pending';
@@ -39,8 +40,6 @@ function stripBase(path: string): string {
 
 if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY');
 
-// Design: dark/muted murderabilia aesthetic matching the existing PriceCharting-style theme
-// Primary: blue (#2563eb), bg white, Inter font, sharp 0.375rem border radius
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
@@ -50,41 +49,41 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: "#2563eb",
-    colorForeground: "#0f172a",
-    colorMutedForeground: "#64748b",
+    colorPrimary: "#b91c1c",
+    colorForeground: "#e8ddd0",
+    colorMutedForeground: "#8a7e72",
     colorDanger: "#dc2626",
-    colorBackground: "#ffffff",
-    colorInput: "#f8fafc",
-    colorInputForeground: "#0f172a",
-    colorNeutral: "#e2e8f0",
+    colorBackground: "#141110",
+    colorInput: "#1c1917",
+    colorInputForeground: "#e8ddd0",
+    colorNeutral: "#292524",
     fontFamily: "'Inter', system-ui, sans-serif",
     borderRadius: "0.375rem",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-lg w-[440px] max-w-full overflow-hidden border shadow-sm",
+    cardBox: "bg-[#141110] rounded-lg w-[440px] max-w-full overflow-hidden border border-[#292524] shadow-sm",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-slate-900 font-bold",
-    headerSubtitle: "text-slate-500",
-    socialButtonsBlockButtonText: "text-slate-700 font-medium",
-    formFieldLabel: "text-slate-700 text-sm font-medium",
-    footerActionLink: "text-blue-600 hover:text-blue-700 font-medium",
-    footerActionText: "text-slate-500",
-    dividerText: "text-slate-400 text-xs",
-    identityPreviewEditButton: "text-blue-600",
-    formFieldSuccessText: "text-green-600",
-    alertText: "text-slate-700",
+    headerTitle: "text-[#e8ddd0] font-bold",
+    headerSubtitle: "text-[#8a7e72]",
+    socialButtonsBlockButtonText: "text-[#c4b8a8] font-medium",
+    formFieldLabel: "text-[#c4b8a8] text-sm font-medium",
+    footerActionLink: "text-[#b91c1c] hover:text-[#dc2626] font-medium",
+    footerActionText: "text-[#8a7e72]",
+    dividerText: "text-[#6b6158] text-xs",
+    identityPreviewEditButton: "text-[#b91c1c]",
+    formFieldSuccessText: "text-emerald-400",
+    alertText: "text-[#c4b8a8]",
     logoBox: "flex justify-center",
     logoImage: "h-10",
-    socialButtonsBlockButton: "border border-slate-200 hover:bg-slate-50",
-    formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-white font-medium",
-    formFieldInput: "border-slate-200 bg-slate-50 text-slate-900 focus:border-blue-600 focus:ring-blue-600",
-    footerAction: "bg-slate-50 border-t border-slate-100",
-    dividerLine: "bg-slate-200",
-    alert: "border border-red-200 bg-red-50",
-    otpCodeFieldInput: "border-slate-200 text-slate-900",
+    socialButtonsBlockButton: "border border-[#292524] hover:bg-[#1c1917]",
+    formButtonPrimary: "bg-[#b91c1c] hover:bg-[#991b1b] text-white font-medium",
+    formFieldInput: "border-[#292524] bg-[#1c1917] text-[#e8ddd0] focus:border-[#b91c1c] focus:ring-[#b91c1c]",
+    footerAction: "bg-[#0f0e0d] border-t border-[#292524]",
+    dividerLine: "bg-[#292524]",
+    alert: "border border-red-900/50 bg-red-950/30",
+    otpCodeFieldInput: "border-[#292524] text-[#e8ddd0]",
     formFieldRow: "gap-2",
     main: "gap-4",
   },
@@ -139,6 +138,8 @@ function Router() {
           <Route path="/items/:slug" component={ItemDetail} />
           <Route path="/tos" component={TOS} />
           <Route path="/watchlist" component={Watchlist} />
+          <Route path="/collection/add" component={CollectionForm} />
+          <Route path="/collection/:slug/edit" component={CollectionForm} />
           <Route path="/admin/items/new" component={AdminItemForm} />
           <Route path="/admin/items/:slug/edit" component={AdminItemForm} />
           <Route path="/admin/items/pending" component={PendingItems} />
