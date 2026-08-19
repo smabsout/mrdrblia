@@ -1,9 +1,9 @@
 import { useRoute, Link } from "wouter";
-import { 
-  useGetItem, 
-  useGetItemValuation, 
-  useGetItemSales, 
-  useGetItemComps, 
+import {
+  useGetItem,
+  useGetItemValuation,
+  useGetItemSales,
+  useGetItemComps,
   getGetItemQueryKey,
   getGetItemValuationQueryKey,
   getGetItemSalesQueryKey,
@@ -11,12 +11,12 @@ import {
   useAddToWatchlist,
   useRemoveFromWatchlist,
   useGetMe,
-  useGetWatchlist
 } from "@workspace/api-client-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
-import { Eye, EyeOff, AlertCircle, Plus } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Plus, Pencil, ArrowLeft, Calendar, MapPin, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 export default function ItemDetail() {
   const [, params] = useRoute("/items/:slug");
@@ -25,192 +25,252 @@ export default function ItemDetail() {
   const { data: me } = useGetMe();
 
   const { data: item, isLoading } = useGetItem(slug!, {
-    query: { enabled: !!slug, queryKey: getGetItemQueryKey(slug!) }
+    query: { enabled: !!slug, queryKey: getGetItemQueryKey(slug!) },
   });
 
   const { data: valuation } = useGetItemValuation(slug!, {
-    query: { enabled: !!slug, queryKey: getGetItemValuationQueryKey(slug!) }
+    query: { enabled: !!slug, queryKey: getGetItemValuationQueryKey(slug!) },
   });
 
   const { data: sales } = useGetItemSales(slug!, {
-    query: { enabled: !!slug, queryKey: getGetItemSalesQueryKey(slug!) }
+    query: { enabled: !!slug, queryKey: getGetItemSalesQueryKey(slug!) },
   });
 
   const { data: comps } = useGetItemComps(slug!, {
-    query: { enabled: !!slug, queryKey: getGetItemCompsQueryKey(slug!) }
+    query: { enabled: !!slug, queryKey: getGetItemCompsQueryKey(slug!) },
   });
 
   const addToWatchlist = useAddToWatchlist();
   const removeFromWatchlist = useRemoveFromWatchlist();
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
-  if (!item) return <div className="p-8 text-center text-red-500">Item not found.</div>;
-
-  const toggleWatch = () => {
-    if (item.isWatched) {
-      removeFromWatchlist.mutate({ itemId: item.id }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetItemQueryKey(slug!) });
-        }
-      });
-    } else {
-      addToWatchlist.mutate({ data: { itemId: item.id } }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetItemQueryKey(slug!) });
-        }
-      });
-    }
-  };
-
-  // Build price matrix
-  const conditions = ["poor", "fair", "good", "excellent", "mint"];
-  const authStatuses = ["unauthenticated", "authenticated"];
-
-  // Prepare chart data (sorted by date)
-  const chartData = sales?.slice().sort((a, b) => new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime()).map(s => ({
-    date: new Date(s.saleDate).toLocaleDateString(),
-    price: s.salePrice,
-    condition: s.conditionGrade,
-    auth: s.authenticationStatus
-  })) || [];
-
-  return (
-    <div className="container mx-auto px-4 py-6 max-w-5xl">
-      {/* Header */}
-      <div className="mb-6 pb-6 border-b">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-2">
-          <div>
-            <div className="flex gap-2 text-sm text-muted-foreground mb-1">
-              <Link href="/" className="hover:text-primary">Catalog</Link> / 
-              <Link href={`/?category=${item.category}`} className="hover:text-primary">{item.category}</Link> / 
-              <span>{item.year || "N/A"}</span>
-            </div>
-            <h1 className="text-3xl font-bold">{item.name}</h1>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {me && (
-              <Button 
-                variant={item.isWatched ? "outline" : "default"} 
-                size="sm" 
-                onClick={toggleWatch}
-                className="w-32"
-                disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
-              >
-                {item.isWatched ? (
-                  <><EyeOff className="w-4 h-4 mr-2" /> Unwatch</>
-                ) : (
-                  <><Eye className="w-4 h-4 mr-2" /> Watch</>
-                )}
-              </Button>
-            )}
-            {me?.role === "admin" && (
-              <Link href={`/admin/items/${item.slug}/edit`}>
-                <Button variant="outline" size="sm">Edit</Button>
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
-          <div>
-            <span className="block text-muted-foreground text-xs uppercase font-bold tracking-wider">Authenticator</span>
-            <span className="font-medium">{item.authenticator || "-"}</span>
-          </div>
-          <div>
-            <span className="block text-muted-foreground text-xs uppercase font-bold tracking-wider">Tier</span>
-            <span className="font-medium flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${
-                item.notorietyTier === 'A' ? 'bg-green-500' :
-                item.notorietyTier === 'B' ? 'bg-yellow-500' :
-                item.notorietyTier === 'C' ? 'bg-gray-400' : 'bg-transparent'
-              }`} />
-              Tier {item.notorietyTier || "-"}
-            </span>
-          </div>
-          <div>
-            <span className="block text-muted-foreground text-xs uppercase font-bold tracking-wider">Watches</span>
-            <span className="font-medium">{item.watchCount || 0}</span>
-          </div>
-        </div>
-
-        {/* My Purchase Section */}
-        <div className="mt-6 bg-muted/30 p-4 border rounded shadow-sm">
-          <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-3">My Purchase</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="block text-muted-foreground text-xs">Paid</span>
-              <span className="font-mono font-medium">
-                {item.purchasePrice != null ? `$${item.purchasePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-              </span>
-            </div>
-            <div>
-              <span className="block text-muted-foreground text-xs">Purchase Date</span>
-              <span className="font-medium">{item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : "—"}</span>
-            </div>
-            <div>
-              <span className="block text-muted-foreground text-xs">Source</span>
-              <span className="font-medium">{item.purchaseSource || "—"}</span>
-            </div>
-            <div>
-              <span className="block text-muted-foreground text-xs">Status</span>
-              <span className="font-medium">
-                {item.purchasePrice != null ? (item.owned ? "Currently Owned" : "Previously Owned") : "—"}
-              </span>
-            </div>
+  if (isLoading)
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-muted rounded w-48" />
+          <div className="h-10 bg-muted rounded w-96" />
+          <div className="grid md:grid-cols-4 gap-4 mt-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-20 bg-muted rounded" />
+            ))}
           </div>
         </div>
       </div>
+    );
 
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-8">
-          
-          {/* Prices Table */}
-          <section>
-            <h2 className="text-xl font-bold mb-4">Prices</h2>
-            
+  if (!item)
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-muted-foreground">Item not found.</p>
+      </div>
+    );
+
+  const toggleWatch = () => {
+    if (item.isWatched) {
+      removeFromWatchlist.mutate(
+        { itemId: item.id },
+        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetItemQueryKey(slug!) }) }
+      );
+    } else {
+      addToWatchlist.mutate(
+        { data: { itemId: item.id } },
+        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetItemQueryKey(slug!) }) }
+      );
+    }
+  };
+
+  const conditions = ["poor", "fair", "good", "excellent", "mint"];
+  const authStatuses = ["unauthenticated", "authenticated"];
+
+  const chartData =
+    sales
+      ?.slice()
+      .sort((a, b) => new Date(a.saleDate).getTime() - new Date(b.saleDate).getTime())
+      .map((s) => ({
+        date: new Date(s.saleDate).toLocaleDateString(),
+        price: s.salePrice,
+      })) || [];
+
+  return (
+    <div className="container mx-auto px-4 py-6 max-w-5xl">
+      <Link
+        href="/"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Back to collection
+      </Link>
+
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-primary font-medium">{item.category}</span>
+            {item.subcategory && (
+              <>
+                <span>/</span>
+                <span>{item.subcategory}</span>
+              </>
+            )}
+            {item.year && (
+              <>
+                <span>/</span>
+                <span>{item.year}</span>
+              </>
+            )}
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">{item.name}</h1>
+          {item.sourceEvent && (
+            <p className="text-sm text-muted-foreground">{item.sourceEvent}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {me && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleWatch}
+              className="gap-1.5 border-border h-8 text-xs"
+              disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
+            >
+              {item.isWatched ? (
+                <>
+                  <EyeOff className="w-3.5 h-3.5" /> Unwatch
+                </>
+              ) : (
+                <>
+                  <Eye className="w-3.5 h-3.5" /> Watch
+                </>
+              )}
+            </Button>
+          )}
+          {me && (
+            <Link href={`/collection/${item.slug}/edit`}>
+              <Button variant="outline" size="sm" className="gap-1.5 border-border h-8 text-xs">
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div className="stat-card">
+          <div className="stat-label">Paid</div>
+          <div className="stat-value text-xl">
+            {item.purchasePrice != null
+              ? `$${item.purchasePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "—"}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Est. Value</div>
+          <div className="stat-value text-xl">
+            {valuation?.medianEstimate != null
+              ? `$${valuation.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "—"}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Gain/Loss</div>
+          <div
+            className={cn(
+              "stat-value text-xl",
+              valuation?.unrealizedGainLoss != null && valuation.unrealizedGainLoss > 0 && "text-emerald-400",
+              valuation?.unrealizedGainLoss != null && valuation.unrealizedGainLoss < 0 && "text-red-400"
+            )}
+          >
+            {valuation?.unrealizedGainLoss != null
+              ? `${valuation.unrealizedGainLoss > 0 ? "+" : ""}$${valuation.unrealizedGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : "—"}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Confidence</div>
+          <div className="stat-value text-xl capitalize">{valuation?.confidence || "—"}</div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <section className="form-section">
+            <h2 className="section-title mb-3">Purchase Details</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-xs text-muted-foreground block mb-0.5">Purchase Date</span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-muted-foreground" />
+                  {item.purchaseDate ? new Date(item.purchaseDate).toLocaleDateString() : "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-0.5">Source</span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3 h-3 text-muted-foreground" />
+                  {item.purchaseSource || "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-0.5">Authenticator</span>
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-muted-foreground" />
+                  {item.authenticator || "—"}
+                </span>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-0.5">Status</span>
+                <span>{item.owned ? "Currently Owned" : "Sold / Not Owned"}</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="form-section">
+            <h2 className="section-title mb-3">Valuation Matrix</h2>
             {valuation?.tierUsed === "C" ? (
-              <div className="bg-muted border rounded p-6 text-center">
-                <div className="inline-block bg-gray-200 text-gray-800 text-xs font-bold uppercase tracking-wider px-2 py-1 rounded mb-3">
+              <div className="text-center py-6">
+                <span className="inline-block bg-muted text-muted-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded mb-2">
                   Category-Level Estimate
-                </div>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-                  {valuation.categoryRangeNote || "No comparable sales data available for this item."}
+                </span>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  {valuation.categoryRangeNote || "Not enough data for item-level valuation."}
                 </p>
               </div>
             ) : (
-              <div className="bg-white border rounded shadow-sm overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full text-center">
                   <thead>
                     <tr>
-                      <th className="text-left w-1/4">Auth Status</th>
-                      {conditions.map(c => (
+                      <th className="text-left">Auth</th>
+                      {conditions.map((c) => (
                         <th key={c} className="capitalize">{c}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {authStatuses.map(auth => (
+                    {authStatuses.map((auth) => (
                       <tr key={auth}>
-                        <td className="text-left font-medium capitalize text-muted-foreground bg-muted/20 border-r align-top py-3">{auth}</td>
-                        {conditions.map(c => {
-                          const seg = valuation?.segments.find(s => s.authenticationStatus === auth && s.conditionGrade === c);
+                        <td className="text-left capitalize text-muted-foreground text-xs font-medium">
+                          {auth}
+                        </td>
+                        {conditions.map((c) => {
+                          const seg = valuation?.segments.find(
+                            (s) => s.authenticationStatus === auth && s.conditionGrade === c
+                          );
                           return (
-                            <td key={c} className={`font-mono text-sm align-top p-2 ${seg ? 'font-bold' : 'text-muted-foreground'}`}>
+                            <td key={c} className="font-mono text-sm">
                               {seg ? (
                                 seg.singleSaleNote ? (
-                                  <div className="bg-amber-50 text-amber-900 text-left text-[10px] leading-tight p-2 rounded border border-amber-200 font-sans font-normal w-40 mx-auto">
-                                    <div className="font-bold flex items-center gap-1 mb-1 text-amber-700">
-                                      <AlertCircle className="w-3 h-3"/> 1 sale on record
-                                    </div>
-                                    <div className="mb-1 text-amber-800 font-medium">Sale price: ${seg.medianEstimate?.toLocaleString()}</div>
-                                    <div className="text-amber-800/80 italic">{seg.singleSaleNote}</div>
+                                  <div className="text-xs text-amber-400">
+                                    <AlertCircle className="w-3 h-3 inline mr-1" />
+                                    ${seg.medianEstimate?.toLocaleString()}
                                   </div>
+                                ) : seg.medianEstimate ? (
+                                  `$${seg.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 ) : (
-                                  seg.medianEstimate ? `$${seg.medianEstimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"
+                                  "—"
                                 )
                               ) : (
-                                "-"
+                                "—"
                               )}
                             </td>
                           );
@@ -221,94 +281,91 @@ export default function ItemDetail() {
                 </table>
               </div>
             )}
-            
-            {valuation && (
-              <div className="mt-3 flex flex-col gap-1">
-                {valuation.tierUsed !== "C" && (
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    <div>Based on <strong className="text-foreground">{valuation.segments.reduce((acc, s) => acc + s.sampleSize, 0)}</strong> verified sales</div>
-                    <div>Algorithm Tier: <strong className="text-foreground">{valuation.tierUsed}</strong></div>
-                  </div>
-                )}
-                
-                {/* Gain/Loss Row */}
-                <div className="mt-2 text-sm">
-                  <span className="font-bold text-muted-foreground mr-2">Unrealized Gain/Loss vs. Purchase Price:</span>
-                  {valuation.purchasePrice == null ? (
-                    <span className="text-muted-foreground italic">Purchase price not recorded</span>
-                  ) : valuation.unrealizedGainLoss != null && valuation.unrealizedGainLossPct != null ? (
-                    <span className={`font-mono font-medium ${valuation.unrealizedGainLoss > 0 ? "text-green-600 dark:text-green-500" : valuation.unrealizedGainLoss < 0 ? "text-red-600 dark:text-red-500" : ""}`}>
-                      {valuation.unrealizedGainLoss > 0 ? "+" : ""}${valuation.unrealizedGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <span className="text-xs ml-1">({valuation.unrealizedGainLossPct > 0 ? "+" : ""}{valuation.unrealizedGainLossPct.toFixed(1)}%)</span>
-                    </span>
-                  ) : (
-                    <span>—</span>
-                  )}
-                </div>
-
-                <div className="text-xs text-gray-400 mt-2">
-                  Estimates last computed: {new Date(valuation.computedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
-                </div>
+            {valuation && valuation.tierUsed !== "C" && (
+              <div className="mt-3 flex gap-4 text-xs text-muted-foreground border-t border-border pt-3">
+                <span>
+                  Tier <strong className="text-foreground">{valuation.tierUsed}</strong>
+                </span>
+                <span>
+                  <strong className="text-foreground">
+                    {valuation.segments.reduce((a, s) => a + s.sampleSize, 0)}
+                  </strong>{" "}
+                  verified sales
+                </span>
+                <span>
+                  Updated{" "}
+                  {new Date(valuation.computedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
               </div>
             )}
           </section>
 
-          {/* Price Chart */}
-          <section>
-            <h2 className="text-xl font-bold mb-4">Price History</h2>
-            <div className="bg-white border rounded shadow-sm p-4 h-72">
+          <section className="form-section">
+            <h2 className="section-title mb-3">Price History</h2>
+            <div className="h-56">
               {chartData.length > 1 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12, fill: '#6b7280' }} 
-                      axisLine={false} 
-                      tickLine={false} 
-                      dy={10}
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(20 7% 14%)" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11, fill: "hsl(25 8% 48%)" }}
                       axisLine={false}
                       tickLine={false}
-                      tickFormatter={(val) => `$${val}`}
-                      dx={-10}
+                      dy={8}
                     />
-                    <RechartsTooltip 
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "hsl(25 8% 48%)" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `$${v}`}
+                      dx={-8}
+                    />
+                    <RechartsTooltip
                       formatter={(value: number) => [`$${value.toLocaleString()}`, "Price"]}
-                      contentStyle={{ borderRadius: '4px', border: '1px solid #e5e7eb', fontSize: '12px', fontFamily: 'var(--font-mono)' }}
+                      contentStyle={{
+                        borderRadius: "6px",
+                        border: "1px solid hsl(20 7% 14%)",
+                        background: "hsl(20 10% 7%)",
+                        fontSize: "12px",
+                        fontFamily: "var(--font-mono)",
+                        color: "hsl(36 20% 90%)",
+                      }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="price" 
-                      stroke="#2563eb" 
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="hsl(0 72% 42%)"
                       strokeWidth={2}
-                      dot={{ r: 4, fill: '#2563eb', strokeWidth: 0 }}
-                      activeDot={{ r: 6 }}
+                      dot={{ r: 3, fill: "hsl(0 72% 42%)", strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: "hsl(0 72% 52%)" }}
                       isAnimationActive={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                  Not enough data to display chart.
+                  Not enough data for chart.
                 </div>
               )}
             </div>
           </section>
 
-          {/* Show Your Work / Sales History */}
-          <section>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Show Your Work</h2>
-              {me?.role === 'admin' && (
+          <section className="form-section">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="section-title">Sale Records</h2>
+              {me?.role === "admin" && (
                 <Link href={`/admin/items/${item.slug}/sales/new`}>
-                  <Button size="sm" variant="outline"><Plus className="w-4 h-4 mr-1"/> Add Sale</Button>
+                  <Button size="sm" variant="outline" className="gap-1 h-7 text-xs border-border">
+                    <Plus className="w-3 h-3" /> Add Sale
+                  </Button>
                 </Link>
               )}
             </div>
-            <div className="bg-white border rounded shadow-sm overflow-x-auto">
+            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
@@ -317,31 +374,33 @@ export default function ItemDetail() {
                     <th>Source</th>
                     <th>Condition</th>
                     <th>Auth</th>
-                    <th className="text-center">Verified?</th>
+                    <th className="text-center">Verified</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sales?.length === 0 ? (
+                  {!sales?.length ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-4 text-muted-foreground">No sales recorded.</td>
+                      <td colSpan={6} className="text-center py-6 text-muted-foreground">
+                        No sales recorded.
+                      </td>
                     </tr>
                   ) : (
-                    sales?.map(sale => (
+                    sales.map((sale) => (
                       <tr key={sale.id}>
-                        <td className="whitespace-nowrap">{new Date(sale.saleDate).toLocaleDateString()}</td>
-                        <td className="text-right font-mono font-medium text-primary">
+                        <td className="whitespace-nowrap text-sm">
+                          {new Date(sale.saleDate).toLocaleDateString()}
+                        </td>
+                        <td className="text-right font-mono text-sm text-primary">
                           ${sale.salePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td>
-                          {sale.sourceName || sale.saleSource.replace('_', ' ')}
-                        </td>
-                        <td className="capitalize">{sale.conditionGrade || "-"}</td>
-                        <td className="capitalize">{sale.authenticationStatus || "-"}</td>
+                        <td className="text-sm">{sale.sourceName || sale.saleSource.replace("_", " ")}</td>
+                        <td className="capitalize text-sm">{sale.conditionGrade || "—"}</td>
+                        <td className="capitalize text-sm">{sale.authenticationStatus || "—"}</td>
                         <td className="text-center">
                           {sale.verified ? (
-                            <span className="text-green-600 font-bold">Yes</span>
+                            <span className="text-emerald-400 text-xs font-medium">Yes</span>
                           ) : (
-                            <span className="text-orange-500">No</span>
+                            <span className="text-amber-400 text-xs">No</span>
                           )}
                         </td>
                       </tr>
@@ -353,36 +412,81 @@ export default function ItemDetail() {
           </section>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           {item.imageUrls && item.imageUrls.length > 0 && (
-            <div className="border rounded bg-white p-2 shadow-sm">
-              <img src={item.imageUrls[0]} alt={item.name} className="w-full h-auto object-contain rounded-sm max-h-64" />
+            <div className="border border-border rounded-lg overflow-hidden bg-card">
+              <img
+                src={item.imageUrls[0]}
+                alt={item.name}
+                className="w-full h-auto object-contain max-h-64"
+              />
             </div>
           )}
 
           {item.description && (
-            <section>
-              <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-2 border-b pb-1">Description</h3>
+            <div className="form-section">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Description
+              </h3>
               <p className="text-sm leading-relaxed">{item.description}</p>
-            </section>
+            </div>
+          )}
+
+          {item.provenanceNotes && (
+            <div className="form-section">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Provenance
+              </h3>
+              <p className="text-sm leading-relaxed">{item.provenanceNotes}</p>
+            </div>
           )}
 
           {comps && comps.length > 0 && (
-            <section>
-              <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider mb-2 border-b pb-1">Comparable Items</h3>
-              <ul className="text-sm space-y-2">
-                {comps.map(comp => (
-                  <li key={comp.id} className="flex flex-col gap-0.5">
-                    <Link href={`/items/${comp.compItemSlug}`} className="text-primary hover:underline font-medium">
+            <div className="form-section">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Comparable Items
+              </h3>
+              <ul className="space-y-2">
+                {comps.map((comp) => (
+                  <li key={comp.id}>
+                    <Link
+                      href={`/items/${comp.compItemSlug}`}
+                      className="text-sm text-primary hover:underline"
+                    >
                       {comp.compItemName}
                     </Link>
-                    <span className="text-xs text-muted-foreground font-mono">Similarity: {Math.round(comp.similarityScore * 100)}%</span>
+                    <span className="text-xs text-muted-foreground ml-2 font-mono">
+                      {Math.round(comp.similarityScore * 100)}% match
+                    </span>
                   </li>
                 ))}
               </ul>
-            </section>
+            </div>
           )}
+
+          <div className="form-section">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Item Info
+            </h3>
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Tier</dt>
+                <dd>{item.notorietyTier || "—"}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Watches</dt>
+                <dd className="font-mono">{item.watchCount || 0}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="capitalize">{item.status}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Added</dt>
+                <dd>{new Date(item.createdAt).toLocaleDateString()}</dd>
+              </div>
+            </dl>
+          </div>
         </div>
       </div>
     </div>

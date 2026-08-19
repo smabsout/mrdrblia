@@ -1,44 +1,85 @@
 import { Link } from "wouter";
 import { ItemSummary } from "@workspace/api-client-react";
 import { formatPrice } from "@/lib/utils";
-import { Bookmark, ShieldCheck, HelpCircle } from "lucide-react";
+import { Eye, ShieldCheck, HelpCircle, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function ItemCard({ item }: { item: ItemSummary }) {
   const hasImage = item.imageUrls && item.imageUrls.length > 0;
-  
+  const gainLoss = item.unrealizedGainLoss;
+
   return (
-    <Link href={`/items/${item.slug}`} className="group flex flex-col bg-card border border-border rounded-md overflow-hidden hover:border-primary hover:shadow-lg transition-all duration-300">
-      <div className="aspect-[4/3] bg-muted relative border-b border-border overflow-hidden">
+    <Link
+      href={`/items/${item.slug}`}
+      className="group flex flex-col bg-card border border-border rounded-lg overflow-hidden hover:border-primary/40 transition-all duration-200"
+    >
+      <div className="aspect-[4/3] bg-muted relative overflow-hidden">
         {hasImage ? (
-          <img src={item.imageUrls![0]} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+          <img
+            src={item.imageUrls![0]}
+            alt={item.name}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground font-serif italic text-sm bg-[#e8e4db] dark:bg-[#1a1f36]">
-            No image available
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+            No image
           </div>
         )}
-        <div className="absolute top-3 right-3 bg-background/95 backdrop-blur shadow-sm text-xs px-2 py-1 rounded border border-border flex items-center gap-1.5 font-mono">
-          <Bookmark className="w-3.5 h-3.5 text-primary" /> {item.watchCount || 0}
+        <div className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm text-[10px] px-1.5 py-0.5 rounded border border-border flex items-center gap-1 font-mono text-muted-foreground">
+          <Eye className="w-3 h-3" /> {item.watchCount || 0}
         </div>
-      </div>
-      
-      <div className="p-5 flex flex-col flex-1">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex justify-between items-center">
-          <span>{item.category}</span>
-          {item.year && <span className="text-muted-foreground opacity-70">{item.year}</span>}
-        </div>
-        <h3 className="font-serif font-bold text-xl leading-tight mb-3 line-clamp-2 group-hover:text-primary transition-colors">{item.name}</h3>
-        
-        <div className="mt-auto pt-5 border-t border-border/50 flex items-end justify-between">
-          <div>
-            <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest font-bold">Median Est.</div>
-            <div className="font-mono text-xl font-bold tracking-tight">
-              {item.medianEstimate ? formatPrice(item.medianEstimate) : "No data"}
-            </div>
+        {item.status === "pending" && (
+          <div className="absolute top-2 left-2 bg-amber-500/90 text-[10px] px-1.5 py-0.5 rounded text-white font-medium flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" /> Pending
           </div>
-          
-          {item.confidence && (
-            <div className="flex flex-col items-end">
-               <ConfidenceBadge confidence={item.confidence} />
+        )}
+      </div>
+
+      <div className="p-4 flex flex-col flex-1">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+            {item.category}
+          </span>
+          {item.year && (
+            <span className="text-[10px] text-muted-foreground font-mono">{item.year}</span>
+          )}
+        </div>
+
+        <h3 className="font-semibold text-sm leading-snug mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+          {item.name}
+        </h3>
+
+        <div className="mt-auto pt-3 border-t border-border/50 space-y-2">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">
+                Est. Value
+              </div>
+              <div className="font-mono text-lg font-bold tracking-tight">
+                {item.medianEstimate ? formatPrice(item.medianEstimate) : "—"}
+              </div>
+            </div>
+            {item.confidence && <ConfidenceBadge confidence={item.confidence} />}
+          </div>
+
+          {item.purchasePrice != null && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                Paid {formatPrice(item.purchasePrice)}
+              </span>
+              {gainLoss != null && (
+                <span
+                  className={cn(
+                    "font-mono font-medium",
+                    gainLoss > 0 && "text-emerald-400",
+                    gainLoss < 0 && "text-red-400",
+                    gainLoss === 0 && "text-muted-foreground"
+                  )}
+                >
+                  {gainLoss > 0 ? "+" : ""}
+                  {formatPrice(gainLoss)}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -48,17 +89,17 @@ export function ItemCard({ item }: { item: ItemSummary }) {
 }
 
 function ConfidenceBadge({ confidence }: { confidence: string }) {
-  const colors = {
-    high: "bg-green-100/50 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50",
-    medium: "bg-blue-100/50 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50",
-    low: "bg-amber-100/50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50",
-  };
-  const color = colors[confidence as keyof typeof colors] || colors.low;
-  
   return (
-    <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded border ${color} flex items-center gap-1.5`}>
-      {confidence === 'high' && <ShieldCheck className="w-3 h-3" />}
-      {confidence === 'low' && <HelpCircle className="w-3 h-3" />}
+    <div
+      className={cn(
+        "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border flex items-center gap-1",
+        confidence === "high" && "badge-confidence-high",
+        confidence === "medium" && "badge-confidence-medium",
+        confidence === "low" && "badge-confidence-low"
+      )}
+    >
+      {confidence === "high" && <ShieldCheck className="w-3 h-3" />}
+      {confidence === "low" && <HelpCircle className="w-3 h-3" />}
       {confidence}
     </div>
   );

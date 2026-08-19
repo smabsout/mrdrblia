@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
-import { 
+import {
   useListAnthropicConversations,
   useCreateAnthropicConversation,
   useListAnthropicMessages,
   getListAnthropicMessagesQueryKey,
-  getListAnthropicConversationsQueryKey
+  getListAnthropicConversationsQueryKey,
 } from "@workspace/api-client-react";
 
 export function ChatDrawer() {
@@ -22,9 +22,11 @@ export function ChatDrawer() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Only run conversations query if drawer is open
   const { data: conversations } = useListAnthropicConversations({
-    query: { enabled: !!user && isOpen, queryKey: getListAnthropicConversationsQueryKey() }
+    query: {
+      enabled: !!user && isOpen,
+      queryKey: getListAnthropicConversationsQueryKey(),
+    },
   });
 
   const createConv = useCreateAnthropicConversation();
@@ -34,18 +36,26 @@ export function ChatDrawer() {
       if (conversations.length > 0) {
         setActiveConversationId(conversations[0].id);
       } else if (!createConv.isPending) {
-        createConv.mutate({ data: { title: "My Collection" } }, {
-          onSuccess: (newConv) => {
-            setActiveConversationId(newConv.id);
-            queryClient.invalidateQueries({ queryKey: getListAnthropicConversationsQueryKey() });
+        createConv.mutate(
+          { data: { title: "My Collection" } },
+          {
+            onSuccess: (newConv) => {
+              setActiveConversationId(newConv.id);
+              queryClient.invalidateQueries({
+                queryKey: getListAnthropicConversationsQueryKey(),
+              });
+            },
           }
-        });
+        );
       }
     }
   }, [isOpen, conversations, createConv.isPending, queryClient]);
 
   const { data: messages } = useListAnthropicMessages(activeConversationId!, {
-    query: { enabled: !!activeConversationId && isOpen, queryKey: getListAnthropicMessagesQueryKey(activeConversationId!) }
+    query: {
+      enabled: !!activeConversationId && isOpen,
+      queryKey: getListAnthropicMessagesQueryKey(activeConversationId!),
+    },
   });
 
   useEffect(() => {
@@ -57,21 +67,22 @@ export function ChatDrawer() {
   const handleSend = async (overrideInput?: string) => {
     const text = overrideInput || input;
     if (!text.trim() || !activeConversationId || isStreaming) return;
-    
+
     setInput("");
     setIsStreaming(true);
     setStreamedResponse("");
 
     try {
-      // Optimistically add user message if we wanted to, but the server handles it.
-      // We will rely on stream text appearing instantly, then refetch.
       const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const response = await fetch(`${BASE}/api/anthropic/conversations/${activeConversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ content: text }),
-      });
+      const response = await fetch(
+        `${BASE}/api/anthropic/conversations/${activeConversationId}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ content: text }),
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to send message");
 
@@ -83,11 +94,11 @@ export function ChatDrawer() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        buffer = lines.pop()!; // save incomplete line
-        
+        buffer = lines.pop()!;
+
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
           try {
@@ -103,12 +114,14 @@ export function ChatDrawer() {
       console.error(err);
     } finally {
       setIsStreaming(false);
-      queryClient.invalidateQueries({ queryKey: getListAnthropicMessagesQueryKey(activeConversationId) });
+      queryClient.invalidateQueries({
+        queryKey: getListAnthropicMessagesQueryKey(activeConversationId),
+      });
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -117,63 +130,73 @@ export function ChatDrawer() {
   const quickActions = [
     "Summarize my collection",
     "What's my most valuable piece?",
-    "What's changed in value recently?"
+    "What's changed in value recently?",
   ];
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-40 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform duration-200 flex items-center gap-2 ${isOpen ? 'scale-0' : 'scale-100'}`}
+        className={`fixed bottom-6 right-6 z-40 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary/90 transition-transform duration-200 flex items-center gap-2 ${
+          isOpen ? "scale-0" : "scale-100"
+        }`}
       >
         <MessageSquare className="w-5 h-5" />
-        <span className="font-bold">Morbid</span>
+        <span className="font-bold text-sm">Morbid</span>
       </button>
 
-      {/* Backdrop */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-50 transition-opacity" 
+        <div
+          className="fixed inset-0 bg-black/40 z-50 transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Drawer */}
-      <div 
-        className={`fixed top-0 right-0 h-[100dvh] w-full max-w-[400px] bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      <div
+        className={`fixed top-0 right-0 h-[100dvh] w-full max-w-[400px] bg-card border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 transform ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
-          <h2 className="font-bold flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 className="font-semibold text-sm flex items-center gap-2 text-foreground">
             <MessageSquare className="w-4 h-4 text-primary" />
             Morbid AI
           </h2>
-          <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => setIsOpen(false)}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
           {messages?.length === 0 && !isStreaming && (
             <div className="text-center text-muted-foreground mt-8 text-sm">
               <p>Ask Morbid about your collection.</p>
             </div>
           )}
-          
+
           {messages?.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                msg.role === 'user' 
-                  ? 'bg-primary text-primary-foreground rounded-br-none' 
-                  : 'bg-white border rounded-bl-none shadow-sm'
-              }`}>
+            <div
+              key={msg.id}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-white rounded-br-none"
+                    : "bg-card border border-border rounded-bl-none"
+                }`}
+              >
                 {msg.content}
               </div>
             </div>
           ))}
-          
+
           {(isStreaming || streamedResponse) && (
             <div className="flex justify-start">
-              <div className="max-w-[85%] rounded-lg px-3 py-2 text-sm bg-white border rounded-bl-none shadow-sm whitespace-pre-wrap">
+              <div className="max-w-[85%] rounded-lg px-3 py-2 text-sm bg-card border border-border rounded-bl-none whitespace-pre-wrap">
                 {streamedResponse || "..."}
               </div>
             </div>
@@ -181,33 +204,35 @@ export function ChatDrawer() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-3 border-t bg-white">
+        <div className="p-3 border-t border-border bg-card">
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {quickActions.map(action => (
-              <button 
+            {quickActions.map((action) => (
+              <button
                 key={action}
-                onClick={() => { setInput(action); }}
-                className="text-[10px] bg-muted hover:bg-muted/80 text-muted-foreground px-2 py-1 rounded-full whitespace-nowrap transition-colors border"
+                onClick={() => {
+                  setInput(action);
+                }}
+                className="text-[10px] bg-muted hover:bg-muted/80 text-muted-foreground px-2 py-1 rounded-full whitespace-nowrap transition-colors border border-border"
               >
                 {action}
               </button>
             ))}
           </div>
-          
+
           <div className="flex gap-2">
-            <Input 
+            <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask Morbid..."
-              className="text-sm shadow-none"
+              className="text-sm bg-input border-border"
               disabled={isStreaming}
             />
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               onClick={() => handleSend()}
               disabled={isStreaming || !input.trim()}
-              className="shrink-0"
+              className="shrink-0 bg-primary hover:bg-primary/90"
             >
               <Send className="w-4 h-4" />
             </Button>
