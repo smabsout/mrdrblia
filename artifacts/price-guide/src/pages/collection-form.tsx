@@ -1,12 +1,11 @@
 import { useRoute, useLocation } from "wouter";
-import { useGetItem, useCreateItem, useUpdateItem, getGetItemQueryKey } from "@workspace/api-client-react";
+import { useGetItem, useCreateCollectionItem, useUpdateCollectionItem, getGetItemQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/react";
 import { ArrowLeft, Package, DollarSign, FileText, Shield } from "lucide-react";
 
 const CATEGORIES = [
@@ -30,7 +29,6 @@ const NOTORIETY_TIERS = [
 ];
 
 export default function CollectionForm() {
-  const { user } = useUser();
   const [, editParams] = useRoute("/collection/:slug/edit");
   const isEdit = !!editParams?.slug;
   const slug = editParams?.slug;
@@ -41,8 +39,8 @@ export default function CollectionForm() {
     query: { enabled: isEdit && !!slug, queryKey: getGetItemQueryKey(slug!) },
   });
 
-  const createItem = useCreateItem();
-  const updateItem = useUpdateItem();
+  const createItem = useCreateCollectionItem();
+  const updateItem = useUpdateCollectionItem();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -50,6 +48,7 @@ export default function CollectionForm() {
     subcategory: "",
     year: "",
     authenticator: "",
+    notorietyTier: "",
     description: "",
     provenanceNotes: "",
     sourceEvent: "",
@@ -67,6 +66,7 @@ export default function CollectionForm() {
         subcategory: item.subcategory || "",
         year: item.year?.toString() || "",
         authenticator: item.authenticator || "",
+        notorietyTier: item.notorietyTier || "",
         description: item.description || "",
         provenanceNotes: item.provenanceNotes || "",
         sourceEvent: item.sourceEvent || "",
@@ -80,14 +80,6 @@ export default function CollectionForm() {
     }
   }, [item, isEdit]);
 
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <p className="text-muted-foreground">Please sign in to add items.</p>
-      </div>
-    );
-  }
-
   const set = (field: string, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
@@ -99,6 +91,7 @@ export default function CollectionForm() {
       subcategory: formData.subcategory || undefined,
       year: formData.year ? parseInt(formData.year) : undefined,
       authenticator: formData.authenticator || undefined,
+      notorietyTier: formData.notorietyTier || undefined,
       description: formData.description || undefined,
       provenanceNotes: formData.provenanceNotes || undefined,
       sourceEvent: formData.sourceEvent || undefined,
@@ -269,6 +262,8 @@ export default function CollectionForm() {
               <Label htmlFor="notorietyTier">Notoriety Tier</Label>
               <select
                 id="notorietyTier"
+                value={formData.notorietyTier}
+                onChange={(e) => set("notorietyTier", e.target.value)}
                 className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {NOTORIETY_TIERS.map((t) => (

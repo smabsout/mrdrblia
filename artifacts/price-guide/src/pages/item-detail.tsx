@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute, Link } from "wouter";
 import {
   useGetItem,
@@ -13,10 +14,71 @@ import {
   useGetMe,
 } from "@workspace/api-client-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
-import { Eye, EyeOff, AlertCircle, Plus, Pencil, ArrowLeft, Calendar, MapPin, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Plus, Pencil, ArrowLeft, Calendar, MapPin, ShieldCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+
+function ImageGallery({ images, alt }: { images: string[]; alt: string }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const hasMultiple = images.length > 1;
+
+  return (
+    <div className="border border-border rounded-lg overflow-hidden bg-card">
+      <div className="relative">
+        <img
+          src={images[activeIndex]}
+          alt={`${alt} - image ${activeIndex + 1}`}
+          className="w-full h-auto object-contain max-h-64"
+        />
+        {hasMultiple && (
+          <>
+            <button
+              onClick={() => setActiveIndex((i) => (i - 1 + images.length) % images.length)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 rounded-full p-1 text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setActiveIndex((i) => (i + 1) % images.length)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 rounded-full p-1 text-white transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveIndex(i)}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-colors",
+                    i === activeIndex ? "bg-white" : "bg-white/40 hover:bg-white/60"
+                  )}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+      {hasMultiple && (
+        <div className="flex gap-1 p-2 overflow-x-auto">
+          {images.map((url, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIndex(i)}
+              className={cn(
+                "shrink-0 w-14 h-14 rounded border overflow-hidden transition-colors",
+                i === activeIndex ? "border-primary" : "border-border hover:border-muted-foreground"
+              )}
+            >
+              <img src={url} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ItemDetail() {
   const [, params] = useRoute("/items/:slug");
@@ -118,39 +180,47 @@ export default function ItemDetail() {
               </>
             )}
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">{item.name}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight">{item.name}</h1>
+            {item.notorietyTier && (
+              <span className={cn(
+                "inline-block px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider border",
+                item.notorietyTier === "A" && "border-primary/50 bg-primary/10 text-primary",
+                item.notorietyTier === "B" && "border-amber-500/50 bg-amber-500/10 text-amber-400",
+                item.notorietyTier === "C" && "border-border bg-muted text-muted-foreground",
+              )}>
+                Tier {item.notorietyTier}
+              </span>
+            )}
+          </div>
           {item.sourceEvent && (
             <p className="text-sm text-muted-foreground">{item.sourceEvent}</p>
           )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {me && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleWatch}
-              className="gap-1.5 border-border h-8 text-xs"
-              disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
-            >
-              {item.isWatched ? (
-                <>
-                  <EyeOff className="w-3.5 h-3.5" /> Unwatch
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5" /> Watch
-                </>
-              )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleWatch}
+            className="gap-1.5 border-border h-8 text-xs"
+            disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
+          >
+            {item.isWatched ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5" /> Unwatch
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5" /> Watch
+              </>
+            )}
+          </Button>
+          <Link href={`/collection/${item.slug}/edit`}>
+            <Button variant="outline" size="sm" className="gap-1.5 border-border h-8 text-xs">
+              <Pencil className="w-3.5 h-3.5" /> Edit
             </Button>
-          )}
-          {me && (
-            <Link href={`/collection/${item.slug}/edit`}>
-              <Button variant="outline" size="sm" className="gap-1.5 border-border h-8 text-xs">
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </Button>
-            </Link>
-          )}
+          </Link>
         </div>
       </div>
 
@@ -414,13 +484,7 @@ export default function ItemDetail() {
 
         <div className="space-y-6">
           {item.imageUrls && item.imageUrls.length > 0 && (
-            <div className="border border-border rounded-lg overflow-hidden bg-card">
-              <img
-                src={item.imageUrls[0]}
-                alt={item.name}
-                className="w-full h-auto object-contain max-h-64"
-              />
-            </div>
+            <ImageGallery images={item.imageUrls} alt={item.name} />
           )}
 
           {item.description && (

@@ -1,35 +1,43 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { Switch, Route, useLocation, Router as WouterRouter } from 'wouter';
+import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Layout } from '@/components/layout';
 import Home from '@/pages/home';
-import TOS from '@/pages/tos';
-import Watchlist from '@/pages/watchlist';
-import ItemDetail from '@/pages/item-detail';
-import CollectionForm from '@/pages/collection-form';
-import AdminItemForm from '@/pages/admin/items/form';
-import PendingItems from '@/pages/admin/items/pending';
-import PendingSales from '@/pages/admin/sales/pending';
-import AddSaleForm from '@/pages/admin/sales/form';
 import NotFound from '@/pages/not-found';
+
+const TOS = lazy(() => import('@/pages/tos'));
+const Watchlist = lazy(() => import('@/pages/watchlist'));
+const ItemDetail = lazy(() => import('@/pages/item-detail'));
+const CollectionForm = lazy(() => import('@/pages/collection-form'));
+const Analytics = lazy(() => import('@/pages/analytics'));
+const AdminItemForm = lazy(() => import('@/pages/admin/items/form'));
+const PendingItems = lazy(() => import('@/pages/admin/items/pending'));
+const PendingSales = lazy(() => import('@/pages/admin/sales/pending'));
+const AddSaleForm = lazy(() => import('@/pages/admin/sales/form'));
+
+function LazyRoute({ component: Component }: { component: React.LazyExoticComponent<React.ComponentType> }) {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-16 text-center text-muted-foreground">Loading...</div>}>
+      <Component />
+    </Suspense>
+  );
+}
 
 const queryClient = new QueryClient();
 
-// REQUIRED — copy verbatim
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
 
-// REQUIRED — copy verbatim. Empty in dev, auto-set in prod.
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -127,29 +135,58 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
-function Router() {
+function AuthenticatedRoutes() {
   return (
     <Layout>
       <RoutedErrorBoundary>
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/sign-in/*?" component={SignInPage} />
-          <Route path="/sign-up/*?" component={SignUpPage} />
-          <Route path="/items/:slug" component={ItemDetail} />
-          <Route path="/tos" component={TOS} />
-          <Route path="/watchlist" component={Watchlist} />
-          <Route path="/collection/add" component={CollectionForm} />
-          <Route path="/collection/:slug/edit" component={CollectionForm} />
-          <Route path="/admin/items/new" component={AdminItemForm} />
-          <Route path="/admin/items/:slug/edit" component={AdminItemForm} />
-          <Route path="/admin/items/pending" component={PendingItems} />
-          <Route path="/admin/sales/pending" component={PendingSales} />
-          <Route path="/admin/items/:slug/sales/new" component={AddSaleForm} />
+          <Route path="/items/:slug">{() => <LazyRoute component={ItemDetail} />}</Route>
+          <Route path="/tos">{() => <LazyRoute component={TOS} />}</Route>
+          <Route path="/watchlist">{() => <LazyRoute component={Watchlist} />}</Route>
+          <Route path="/analytics">{() => <LazyRoute component={Analytics} />}</Route>
+          <Route path="/collection/add">{() => <LazyRoute component={CollectionForm} />}</Route>
+          <Route path="/collection/:slug/edit">{() => <LazyRoute component={CollectionForm} />}</Route>
+          <Route path="/admin/items/new">{() => <LazyRoute component={AdminItemForm} />}</Route>
+          <Route path="/admin/items/:slug/edit">{() => <LazyRoute component={AdminItemForm} />}</Route>
+          <Route path="/admin/items/pending">{() => <LazyRoute component={PendingItems} />}</Route>
+          <Route path="/admin/sales/pending">{() => <LazyRoute component={PendingSales} />}</Route>
+          <Route path="/admin/items/:slug/sales/new">{() => <LazyRoute component={AddSaleForm} />}</Route>
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>
     </Layout>
   );
+}
+
+function UnauthenticatedRoutes() {
+  return (
+    <Switch>
+      <Route path="/sign-in/*?" component={SignInPage} />
+      <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/tos">{() => <LazyRoute component={TOS} />}</Route>
+      <Route><Redirect to="/sign-in" /></Route>
+    </Switch>
+  );
+}
+
+function AuthGate() {
+  const { isLoaded, isSignedIn } = useUser();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-xs">TP</span>
+          </div>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return isSignedIn ? <AuthenticatedRoutes /> : <UnauthenticatedRoutes />;
 }
 
 function ClerkProviderWithRoutes() {
@@ -171,7 +208,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
-          <Router />
+          <AuthGate />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>

@@ -76,7 +76,7 @@ export const GetMeResponse = zod.object({
 export const ListItemsQueryParams = zod.object({
   "q": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
-  "sort": zod.enum(['recent', 'watched']).optional(),
+  "sort": zod.enum(['recent', 'watched', 'value_high', 'value_low', 'name']).optional(),
   "page": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional()
 })
@@ -323,6 +323,107 @@ export const RemoveFromWatchlistResponse = zod.void()
 
 
 /**
+ * @summary Add an item to your collection (authenticated user)
+ */
+export const CreateCollectionItemBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string().optional(),
+  "category": zod.string(),
+  "subcategory": zod.string().optional(),
+  "description": zod.string().optional(),
+  "provenanceNotes": zod.string().optional(),
+  "year": zod.number().optional(),
+  "sourceEvent": zod.string().optional(),
+  "authenticator": zod.string().optional(),
+  "notorietyTier": zod.string().optional(),
+  "imageUrls": zod.array(zod.string()).optional(),
+  "purchasePrice": zod.number().optional(),
+  "purchaseDate": zod.string().optional(),
+  "purchaseSource": zod.string().optional(),
+  "owned": zod.boolean().optional()
+})
+
+export const CreateCollectionItemResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "subcategory": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "provenanceNotes": zod.string().nullish(),
+  "year": zod.number().nullish(),
+  "sourceEvent": zod.string().nullish(),
+  "authenticator": zod.string().nullish(),
+  "notorietyTier": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "watchCount": zod.number().optional(),
+  "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update an item you own in your collection
+ */
+export const UpdateCollectionItemParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateCollectionItemBody = zod.object({
+  "name": zod.string().optional(),
+  "category": zod.string().optional(),
+  "subcategory": zod.string().optional(),
+  "description": zod.string().optional(),
+  "provenanceNotes": zod.string().optional(),
+  "year": zod.number().optional(),
+  "sourceEvent": zod.string().optional(),
+  "authenticator": zod.string().optional(),
+  "notorietyTier": zod.string().optional(),
+  "imageUrls": zod.array(zod.string()).optional(),
+  "purchasePrice": zod.number().optional(),
+  "purchaseDate": zod.string().optional(),
+  "purchaseSource": zod.string().optional(),
+  "owned": zod.boolean().optional()
+})
+
+export const UpdateCollectionItemResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "subcategory": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "provenanceNotes": zod.string().nullish(),
+  "year": zod.number().nullish(),
+  "sourceEvent": zod.string().nullish(),
+  "authenticator": zod.string().nullish(),
+  "notorietyTier": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "watchCount": zod.number().optional(),
+  "isWatched": zod.boolean().optional(),
+  "purchasePrice": zod.number().nullish(),
+  "purchaseDate": zod.string().nullish(),
+  "purchaseSource": zod.string().nullish(),
+  "owned": zod.boolean().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Export your collection as CSV
+ */
+export const ExportCollectionResponse = zod.unknown()
+
+
+/**
  * @summary Create a new item
  */
 export const CreateItemBody = zod.object({
@@ -335,6 +436,7 @@ export const CreateItemBody = zod.object({
   "year": zod.number().optional(),
   "sourceEvent": zod.string().optional(),
   "authenticator": zod.string().optional(),
+  "notorietyTier": zod.string().optional(),
   "imageUrls": zod.array(zod.string()).optional(),
   "purchasePrice": zod.number().optional(),
   "purchaseDate": zod.string().optional(),
@@ -412,6 +514,7 @@ export const UpdateItemBody = zod.object({
   "year": zod.number().optional(),
   "sourceEvent": zod.string().optional(),
   "authenticator": zod.string().optional(),
+  "notorietyTier": zod.string().optional(),
   "imageUrls": zod.array(zod.string()).optional(),
   "purchasePrice": zod.number().optional(),
   "purchaseDate": zod.string().optional(),

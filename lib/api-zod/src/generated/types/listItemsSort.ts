@@ -12,4 +12,7 @@ export type ListItemsSort = typeof ListItemsSort[keyof typeof ListItemsSort];
 export const ListItemsSort = {
   recent: 'recent',
   watched: 'watched',
+  value_high: 'value_high',
+  value_low: 'value_low',
+  name: 'name',
 } as const;

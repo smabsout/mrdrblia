@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useListCategories, useListItems, getListItemsQueryKey, ListItemsSort } from "@workspace/api-client-react";
-import { Search, LayoutGrid, List, Plus, Eye, AlertCircle } from "lucide-react";
+import { Search, LayoutGrid, List, Plus, Eye, AlertCircle, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ItemCard } from "@/components/item-card";
@@ -16,7 +16,6 @@ export default function Home() {
   const [sort, setSort] = useState<ListItemsSort>("recent");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [, setLocation] = useLocation();
 
   const { data: categories } = useListCategories();
 
@@ -121,14 +120,30 @@ export default function Home() {
           ))}
         </div>
 
-        <select
-          className="text-xs border border-border rounded-md px-2 py-1.5 bg-card text-foreground focus:ring-1 focus:ring-ring outline-none"
-          value={sort}
-          onChange={(e) => { setSort(e.target.value as ListItemsSort); setPage(1); }}
-        >
-          <option value="recent">Recently Added</option>
-          <option value="watched">Most Watched</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            className="text-xs border border-border rounded-md px-2 py-1.5 bg-card text-foreground focus:ring-1 focus:ring-ring outline-none"
+            value={sort}
+            onChange={(e) => { setSort(e.target.value as ListItemsSort); setPage(1); }}
+          >
+            <option value="recent">Recently Added</option>
+            <option value="watched">Most Watched</option>
+            <option value="value_high">Highest Value</option>
+            <option value="value_low">Lowest Value</option>
+            <option value="name">Name A–Z</option>
+          </select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-7 text-xs border-border"
+            onClick={() => {
+              const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+              window.open(`${basePath}/api/collection/export`, "_blank");
+            }}
+          >
+            <Download className="w-3 h-3" /> Export CSV
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
