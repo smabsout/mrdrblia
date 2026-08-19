@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/react";
 import { ArrowLeft, Package, DollarSign, FileText, Shield } from "lucide-react";
 
 const CATEGORIES = [
@@ -30,7 +29,6 @@ const NOTORIETY_TIERS = [
 ];
 
 export default function CollectionForm() {
-  const { user } = useUser();
   const [, editParams] = useRoute("/collection/:slug/edit");
   const isEdit = !!editParams?.slug;
   const slug = editParams?.slug;
@@ -81,14 +79,6 @@ export default function CollectionForm() {
       });
     }
   }, [item, isEdit]);
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <p className="text-muted-foreground">Please sign in to add items.</p>
-      </div>
-    );
-  }
 
   const set = (field: string, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [field]: value }));

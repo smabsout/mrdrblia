@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { itemsTable, salesTable, watchlistTable, valuationCacheTable } from "@workspace/db";
-import { eq, sql, and, desc, count } from "drizzle-orm";
+import { eq, sql, and, or, desc, count } from "drizzle-orm";
 import slugify from "../lib/slugify.js";
 
 const router: IRouter = Router();
@@ -14,7 +14,10 @@ router.get("/items", async (req, res): Promise<void> => {
 
   const userId = req.userId ?? null;
 
-  const conditions = [eq(itemsTable.status, "approved")];
+  const statusCondition = userId
+    ? or(eq(itemsTable.status, "approved"), eq(itemsTable.createdBy, userId))
+    : eq(itemsTable.status, "approved");
+  const conditions = [statusCondition!];
   if (category) conditions.push(eq(itemsTable.category, category));
   if (q) {
     // Full-text search using Postgres tsvector. Falls back to trigram-style

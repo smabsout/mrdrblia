@@ -1,6 +1,5 @@
 import { type ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { AgeGate } from "@/components/age-gate";
 import { ChatDrawer } from "@/components/chat-drawer";
 import { useGetMe, useGetStats } from "@workspace/api-client-react";
 import { useUser, useClerk } from "@clerk/react";
@@ -100,7 +99,7 @@ function NavLink({ href, icon: Icon, label, active }: {
 }
 
 function Header() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const { signOut } = useClerk();
   const { data: me } = useGetMe();
   const [location] = useLocation();
@@ -149,49 +148,31 @@ function Header() {
           </div>
 
           <div className="flex items-center gap-2">
-            {isLoaded && user && (
-              <>
-                <Link href="/collection/add">
-                  <Button size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 text-xs h-8">
-                    <Plus className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Add Item</span>
-                  </Button>
-                </Link>
-                <div className="hidden md:flex items-center gap-2 ml-2 text-sm text-muted-foreground">
-                  <span className="text-xs">{user.fullName || user.emailAddresses[0]?.emailAddress}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="md:hidden h-8 w-8 p-0"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                >
-                  {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-                </Button>
-              </>
-            )}
-            {isLoaded && !user && (
-              <div className="flex items-center gap-2">
-                <Link href="/sign-in">
-                  <Button variant="ghost" size="sm" className="text-xs h-8">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/sign-up">
-                  <Button size="sm" className="text-xs h-8 bg-primary hover:bg-primary/90">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
-            )}
+            <Link href="/collection/add">
+              <Button size="sm" className="gap-1.5 bg-primary hover:bg-primary/90 text-xs h-8">
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Add Item</span>
+              </Button>
+            </Link>
+            <div className="hidden md:flex items-center gap-2 ml-2 text-sm text-muted-foreground">
+              <span className="text-xs">{user?.fullName || user?.emailAddresses[0]?.emailAddress}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden h-8 w-8 p-0"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </Button>
           </div>
         </div>
 
@@ -241,7 +222,6 @@ export { StatsBar };
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
-      <AgeGate />
       <Header />
       <main className="flex-1 pb-12">{children}</main>
       <ChatDrawer />
@@ -250,7 +230,6 @@ export function Layout({ children }: { children: ReactNode }) {
           <div>&copy; {new Date().getFullYear()} The Provenance. All data is for informational purposes.</div>
           <div className="flex gap-4">
             <Link href="/tos" className="hover:text-foreground transition-colors">Terms of Service</Link>
-            <Link href="/" className="hover:text-foreground transition-colors">Privacy</Link>
           </div>
         </div>
       </footer>

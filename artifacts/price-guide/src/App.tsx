@@ -1,10 +1,10 @@
 import { useEffect, useRef, lazy, Suspense } from "react";
 import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { Switch, Route, useLocation, Router as WouterRouter } from 'wouter';
+import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { useQueryClient } from "@tanstack/react-query";
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -33,13 +33,11 @@ function LazyRoute({ component: Component }: { component: React.LazyExoticCompon
 
 const queryClient = new QueryClient();
 
-// REQUIRED — copy verbatim
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
 
-// REQUIRED — copy verbatim. Empty in dev, auto-set in prod.
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -137,14 +135,12 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
-function Router() {
+function AuthenticatedRoutes() {
   return (
     <Layout>
       <RoutedErrorBoundary>
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/sign-in/*?" component={SignInPage} />
-          <Route path="/sign-up/*?" component={SignUpPage} />
           <Route path="/items/:slug">{() => <LazyRoute component={ItemDetail} />}</Route>
           <Route path="/tos">{() => <LazyRoute component={TOS} />}</Route>
           <Route path="/watchlist">{() => <LazyRoute component={Watchlist} />}</Route>
@@ -161,6 +157,36 @@ function Router() {
       </RoutedErrorBoundary>
     </Layout>
   );
+}
+
+function UnauthenticatedRoutes() {
+  return (
+    <Switch>
+      <Route path="/sign-in/*?" component={SignInPage} />
+      <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/tos">{() => <LazyRoute component={TOS} />}</Route>
+      <Route><Redirect to="/sign-in" /></Route>
+    </Switch>
+  );
+}
+
+function AuthGate() {
+  const { isLoaded, isSignedIn } = useUser();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-xs">TP</span>
+          </div>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return isSignedIn ? <AuthenticatedRoutes /> : <UnauthenticatedRoutes />;
 }
 
 function ClerkProviderWithRoutes() {
@@ -182,7 +208,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
-          <Router />
+          <AuthGate />
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>

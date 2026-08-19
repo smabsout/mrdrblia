@@ -1,6 +1,5 @@
 import { Link } from "wouter";
 import { useListItems, useGetStats, getListItemsQueryKey } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
@@ -22,20 +21,11 @@ const CHART_COLORS = [
 ];
 
 export default function Analytics() {
-  const { user } = useUser();
   const { data: stats } = useGetStats();
   const { data: itemsData } = useListItems(
     { limit: 100, sort: "recent" },
     { query: { queryKey: getListItemsQueryKey({ limit: 100, sort: "recent" }) } }
   );
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <p className="text-muted-foreground">Sign in to view analytics.</p>
-      </div>
-    );
-  }
 
   const items = itemsData?.items ?? [];
 

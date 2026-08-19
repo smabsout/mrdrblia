@@ -1,30 +1,12 @@
 import { Link } from "wouter";
-import { useGetWatchlist, getGetWatchlistQueryKey, useGetMe } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useGetWatchlist, getGetWatchlistQueryKey } from "@workspace/api-client-react";
 import { Eye, AlertCircle, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Watchlist() {
-  const { data: me } = useGetMe();
-  const { user } = useUser();
   const { data: watchlist, isLoading } = useGetWatchlist({
-    query: { enabled: !!user, queryKey: getGetWatchlistQueryKey() }
+    query: { queryKey: getGetWatchlistQueryKey() }
   });
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center max-w-lg">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-          <Bookmark className="w-6 h-6 text-muted-foreground" />
-        </div>
-        <h1 className="text-xl font-semibold mb-2">Watchlist</h1>
-        <p className="text-sm text-muted-foreground mb-6">Sign in to track items you're watching.</p>
-        <Link href="/sign-in" className="text-primary hover:text-primary/80 text-sm font-medium transition-colors">
-          Sign In
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-6">

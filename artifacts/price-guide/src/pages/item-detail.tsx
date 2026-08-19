@@ -199,32 +199,28 @@ export default function ItemDetail() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {me && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleWatch}
-              className="gap-1.5 border-border h-8 text-xs"
-              disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
-            >
-              {item.isWatched ? (
-                <>
-                  <EyeOff className="w-3.5 h-3.5" /> Unwatch
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5" /> Watch
-                </>
-              )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleWatch}
+            className="gap-1.5 border-border h-8 text-xs"
+            disabled={addToWatchlist.isPending || removeFromWatchlist.isPending}
+          >
+            {item.isWatched ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5" /> Unwatch
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5" /> Watch
+              </>
+            )}
+          </Button>
+          <Link href={`/collection/${item.slug}/edit`}>
+            <Button variant="outline" size="sm" className="gap-1.5 border-border h-8 text-xs">
+              <Pencil className="w-3.5 h-3.5" /> Edit
             </Button>
-          )}
-          {me && (
-            <Link href={`/collection/${item.slug}/edit`}>
-              <Button variant="outline" size="sm" className="gap-1.5 border-border h-8 text-xs">
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </Button>
-            </Link>
-          )}
+          </Link>
         </div>
       </div>
 

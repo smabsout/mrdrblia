@@ -1,24 +1,21 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useListCategories, useListItems, getListItemsQueryKey, ListItemsSort } from "@workspace/api-client-react";
 import { Search, LayoutGrid, List, Plus, Eye, AlertCircle, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ItemCard } from "@/components/item-card";
 import { StatsBar } from "@/components/layout";
-import { cn, formatPrice } from "@/lib/utils";
-import { useUser } from "@clerk/react";
+import { cn } from "@/lib/utils";
 
 type ViewMode = "grid" | "table";
 
 export default function Home() {
-  const { user } = useUser();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [sort, setSort] = useState<ListItemsSort>("recent");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [, setLocation] = useLocation();
 
   const { data: categories } = useListCategories();
 
@@ -135,19 +132,17 @@ export default function Home() {
             <option value="value_low">Lowest Value</option>
             <option value="name">Name A–Z</option>
           </select>
-          {user && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 h-7 text-xs border-border"
-              onClick={() => {
-                const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-                window.open(`${basePath}/api/collection/export`, "_blank");
-              }}
-            >
-              <Download className="w-3 h-3" /> Export CSV
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-7 text-xs border-border"
+            onClick={() => {
+              const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+              window.open(`${basePath}/api/collection/export`, "_blank");
+            }}
+          >
+            <Download className="w-3 h-3" /> Export CSV
+          </Button>
         </div>
       </div>
 
